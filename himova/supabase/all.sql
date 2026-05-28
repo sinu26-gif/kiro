@@ -26,6 +26,7 @@ create index if not exists profiles_role_idx on public.profiles (role);
 
 -- ---------------------------------------------------------------------------
 -- helper functions used by RLS policies
+-- (current_shopkeeper_id is defined in 00003 after the shopkeepers table exists)
 -- ---------------------------------------------------------------------------
 create or replace function public.current_role()
 returns text
@@ -48,22 +49,6 @@ as $$
     select 1 from public.profiles where id = auth.uid() and role = 'admin'
   )
 $$;
-
--- Returns the shopkeeper.id for the current authenticated user, or null.
-create or replace function public.current_shopkeeper_id()
-returns uuid
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select s.id
-  from public.shopkeepers s
-  where s.profile_id = auth.uid()
-$$;
-
--- Note: shopkeepers table is created in migration 00003.
--- The function compiles lazily on first call, so the forward reference is fine.
 
 -- ---------------------------------------------------------------------------
 -- generic updated_at trigger function
@@ -208,6 +193,22 @@ create table if not exists public.shopkeepers (
 );
 
 create index if not exists shopkeepers_status_idx on public.shopkeepers (status);
+
+-- ---------------------------------------------------------------------------
+-- current_shopkeeper_id: helper used by RLS on every shopkeeper-scoped table.
+-- Defined here (not in 00001) because it references the shopkeepers table.
+-- ---------------------------------------------------------------------------
+create or replace function public.current_shopkeeper_id()
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select s.id
+  from public.shopkeepers s
+  where s.profile_id = auth.uid()
+$$;
 
 -- ---------------------------------------------------------------------------
 -- shopkeeper_pricing: per-shopkeeper override on a specific set_type

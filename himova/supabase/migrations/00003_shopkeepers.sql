@@ -21,6 +21,22 @@ create table if not exists public.shopkeepers (
 create index if not exists shopkeepers_status_idx on public.shopkeepers (status);
 
 -- ---------------------------------------------------------------------------
+-- current_shopkeeper_id: helper used by RLS on every shopkeeper-scoped table.
+-- Defined here (not in 00001) because it references the shopkeepers table.
+-- ---------------------------------------------------------------------------
+create or replace function public.current_shopkeeper_id()
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select s.id
+  from public.shopkeepers s
+  where s.profile_id = auth.uid()
+$$;
+
+-- ---------------------------------------------------------------------------
 -- shopkeeper_pricing: per-shopkeeper override on a specific set_type
 -- Either an absolute override (override_paisa) or a percent (discount_percent)
 -- ---------------------------------------------------------------------------
