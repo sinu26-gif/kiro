@@ -1,5 +1,6 @@
 import { useTranslations } from "next-intl";
 
+import { Logo } from "@/components/shared/logo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -33,30 +34,40 @@ function LoginPageView({ defaultTab }: { defaultTab: "shopkeeper" | "admin" }) {
   const t = useTranslations("auth");
 
   return (
-    <div className="container flex min-h-[calc(100vh-8rem)] items-center justify-center py-10">
-      <Card className="w-full max-w-md border-2 shadow-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">{t("loginTitle")}</CardTitle>
-          <CardDescription>{t("loginSubtitle")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue={defaultTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="shopkeeper">{t("shopkeeperTab")}</TabsTrigger>
-              <TabsTrigger value="admin">{t("adminTab")}</TabsTrigger>
-            </TabsList>
-            <TabsContent value="shopkeeper">
-              <ShopkeeperLoginForm />
-            </TabsContent>
-            <TabsContent value="admin">
-              <AdminLoginForm />
-            </TabsContent>
-          </Tabs>
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            {t("needHelp")}
-          </p>
-        </CardContent>
-      </Card>
+    <div className="relative">
+      <div aria-hidden className="absolute inset-x-0 top-0 -z-10 h-[60vh] bg-hero-glow" />
+      <div className="container flex min-h-[calc(100vh-8rem)] items-center justify-center py-10">
+        <div className="w-full max-w-md space-y-6">
+          <div className="flex justify-center sm:hidden">
+            <Logo size="md" />
+          </div>
+          <Card className="border shadow-lift">
+            <CardHeader className="space-y-2 text-center">
+              <CardTitle className="text-2xl tracking-tight sm:text-3xl">
+                {t("loginTitle")}
+              </CardTitle>
+              <CardDescription>{t("loginSubtitle")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue={defaultTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="shopkeeper">{t("shopkeeperTab")}</TabsTrigger>
+                  <TabsTrigger value="admin">{t("adminTab")}</TabsTrigger>
+                </TabsList>
+                <TabsContent value="shopkeeper">
+                  <ShopkeeperLoginForm />
+                </TabsContent>
+                <TabsContent value="admin">
+                  <AdminLoginForm />
+                </TabsContent>
+              </Tabs>
+              <p className="mt-6 text-center text-xs text-muted-foreground">
+                {t("needHelp")}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

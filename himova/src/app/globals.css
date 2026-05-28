@@ -14,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 158 64% 40%; /* emerald-600 */
+    --primary: 158 64% 40%;          /* emerald-600 */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96%;
@@ -23,7 +23,7 @@
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 158 64% 95%; /* emerald tint */
+    --accent: 158 64% 95%;            /* emerald tint */
     --accent-foreground: 158 64% 25%;
 
     --destructive: 0 72% 51%;
@@ -40,6 +40,10 @@
     --ring: 158 64% 40%;
 
     --radius: 0.625rem;
+
+    /* Soft shadow used by elevated cards and CTAs */
+    --shadow-soft: 0 1px 2px hsl(222 47% 11% / 0.04), 0 4px 16px hsl(222 47% 11% / 0.06);
+    --shadow-lift: 0 1px 2px hsl(222 47% 11% / 0.04), 0 12px 32px hsl(222 47% 11% / 0.10);
   }
 
   .dark {
@@ -86,19 +90,34 @@
 
   html {
     -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings:
-      "rlig" 1,
-      "calt" 1;
+    font-feature-settings: "rlig" 1, "calt" 1, "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Headings: a touch tighter, slightly tracked-in for a modern, premium feel. */
+  h1, h2, h3, h4 {
+    letter-spacing: -0.015em;
   }
 
   /* Use Devanagari font automatically when language attribute is Nepali */
   html[lang="ne"] body {
-    font-family:
-      var(--font-devanagari), var(--font-sans), system-ui, sans-serif;
+    font-family: var(--font-devanagari), var(--font-sans), system-ui, sans-serif;
+  }
+
+  /* Numbers should be tabular by default for tables/dashboards. */
+  table, .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Smoother focus ring: stays accessible but visually softer. */
+  :focus-visible {
+    outline: none;
   }
 }
 
@@ -107,9 +126,37 @@
     text-wrap: balance;
   }
 
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
   /* Minimum 44px tap targets for shopkeeper UI */
   .tap-target {
     min-height: 44px;
     min-width: 44px;
+  }
+
+  /* Premium soft shadow for cards / CTAs */
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-lift {
+    box-shadow: var(--shadow-lift);
+  }
+
+  /* Subtle gradient backdrop used behind hero sections */
+  .bg-hero-glow {
+    background-image:
+      radial-gradient(60% 60% at 50% 0%, hsl(var(--primary) / 0.10), transparent 70%),
+      radial-gradient(40% 40% at 100% 30%, hsl(var(--primary) / 0.06), transparent 70%);
+  }
+
+  /* Brand gradient text used for the wordmark and hero accents */
+  .text-brand-gradient {
+    background-image: linear-gradient(135deg, hsl(158 64% 35%), hsl(158 64% 50%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 }

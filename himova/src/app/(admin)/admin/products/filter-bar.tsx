@@ -131,8 +131,9 @@ export function ProductFilterBar({
       </NativeSelect>
 
       <div className="flex gap-2">
-        <Button type="submit" variant="secondary" disabled={isPending}>
-          {t("table.name") /* "Name" — kept simple, button is mostly for keyboard users */}
+        <Button type="submit" variant="default" size="default" disabled={isPending}>
+          <Search className="mr-1.5 h-4 w-4" aria-hidden />
+          {t("searchButton")}
         </Button>
         {hasFilters ? (
           <Button
