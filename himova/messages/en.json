@@ -91,6 +91,72 @@
       "suspended": "Suspended"
     }
   },
+  "products": {
+    "title": "Products",
+    "subtitle": "Manage the catalog of shoes, clothing, and other items shopkeepers can order.",
+    "addNew": "Add product",
+    "empty": "No products yet. Add your first one.",
+    "noResults": "No products match your filters.",
+    "searchPlaceholder": "Search by name...",
+    "filterAll": "All categories",
+    "filterStatusActive": "Active only",
+    "filterStatusArchived": "Archived only",
+    "filterStatusAll": "All",
+    "table": {
+      "name": "Name",
+      "category": "Category",
+      "variants": "Variants",
+      "sets": "Sets",
+      "price": "From",
+      "stock": "Stock",
+      "status": "Status",
+      "createdAt": "Created"
+    },
+    "status": {
+      "active": "Active",
+      "archived": "Archived"
+    },
+    "newTitle": "New product",
+    "newSubtitle": "Create the product. Add variants (colours) and set types (size combinations) on the next page.",
+    "editTitle": "Edit product",
+    "editSubtitle": "Update product details, variants, and set types.",
+    "form": {
+      "name": "Product name",
+      "namePlaceholder": "e.g. Urban Runner Sneaker",
+      "category": "Category",
+      "categoryPlaceholder": "Choose a category",
+      "description": "Description (optional)",
+      "descriptionPlaceholder": "Brief details, materials, fit notes...",
+      "videoUrl": "YouTube video URL (optional)",
+      "videoUrlPlaceholder": "https://youtube.com/watch?v=...",
+      "suggestedRetail": "Suggested retail price (NPR, optional)",
+      "suggestedRetailPlaceholder": "e.g. 1200",
+      "suggestedRetailHint": "Suggestion shown to shopkeepers in their POS. They can override.",
+      "submit": "Create product",
+      "submitting": "Creating...",
+      "save": "Save changes",
+      "saving": "Saving..."
+    },
+    "actions": {
+      "edit": "Edit",
+      "archive": "Archive",
+      "restore": "Restore"
+    },
+    "variants": {
+      "title": "Variants",
+      "subtitle": "Different colours or styles of this product.",
+      "empty": "No variants yet. Add the first colour or style after creating the product.",
+      "comingSoon": "Add / edit variants — coming next.",
+      "setsCount": "{count, plural, =0 {no sets} one {# set} other {# sets}}"
+    },
+    "setTypes": {
+      "title": "Set types",
+      "subtitle": "Each set type defines a fixed size combination sold as one unit.",
+      "warehouseStock": "Warehouse stock",
+      "reorderAt": "Reorder at",
+      "comingSoon": "Add / edit set types — coming next."
+    }
+  },
   "landing": {
     "heroTitle": "Wholesale ordering and a free POS, built for Nepal.",
     "heroSubtitle": "Order shoes and clothing in sets, track every sale, and grow with your shop on a single platform.",
