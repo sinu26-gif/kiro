@@ -4,7 +4,7 @@ This folder holds the database schema and RLS policies for Himova.
 
 ## How to apply migrations (one-time setup)
 
-1. Open the [Supabase SQL Editor](https://supabase.com/dashboard/project/bezdcjjkobhykjngegj/sql/new) for the Himova project.
+1. Open the [Supabase SQL Editor](https://supabase.com/dashboard/project/bezdcjjkobhykjqngegj/sql/new) for the Himova project.
 2. Open `supabase/all.sql` from this repo.
 3. Copy its full contents and paste them into the SQL Editor.
 4. Click **Run**. You should see "Success. No rows returned" once it completes.

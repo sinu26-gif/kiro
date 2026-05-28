@@ -4,7 +4,7 @@ Get the app running end-to-end in under 10 minutes.
 
 ## 1. Apply the database schema (one-time)
 
-1. Open the [Supabase SQL Editor](https://supabase.com/dashboard/project/bezdcjjkobhykjngegj/sql/new).
+1. Open the [Supabase SQL Editor](https://supabase.com/dashboard/project/bezdcjjkobhykjqngegj/sql/new).
 2. Open `supabase/all.sql` from this repo.
 3. Copy its full contents, paste into the editor, click **Run**.
 4. (Optional) Repeat with `supabase/seed.sql` to insert sample categories, products, variants, and set types.
@@ -15,11 +15,11 @@ You should see "Success. No rows returned." for each.
 
 Supabase Auth users cannot be created from the app — you must create the very first admin manually:
 
-1. Open [Supabase Authentication > Users](https://supabase.com/dashboard/project/bezdcjjkobhykjngegj/auth/users).
+1. Open [Supabase Authentication > Users](https://supabase.com/dashboard/project/bezdcjjkobhykjqngegj/auth/users).
 2. Click **Add user > Create new user**.
 3. Enter your admin email + a strong password. Tick "Auto Confirm User".
 4. Copy the `User UID` from the new row.
-5. Back in the [SQL Editor](https://supabase.com/dashboard/project/bezdcjjkobhykjngegj/sql/new), run:
+5. Back in the [SQL Editor](https://supabase.com/dashboard/project/bezdcjjkobhykjqngegj/sql/new), run:
 
    ```sql
    insert into public.profiles (id, role, full_name)
