@@ -10,7 +10,86 @@
     "actions": "Actions",
     "language": "Language",
     "english": "English",
-    "nepali": "नेपाली"
+    "nepali": "नेपाली",
+    "back": "Back",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "shopNav": {
+    "home": "Home",
+    "catalog": "Catalog",
+    "cart": "Cart",
+    "orders": "Orders",
+    "stock": "Stock",
+    "pos": "POS",
+    "customers": "Customers",
+    "reports": "Reports",
+    "leaderboard": "Leaderboard",
+    "settings": "Settings"
+  },
+  "adminNav": {
+    "dashboard": "Dashboard",
+    "products": "Products",
+    "shopkeepers": "Shopkeepers",
+    "orders": "Orders",
+    "stock": "Stock",
+    "leaderboard": "Leaderboard",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "shopHome": {
+    "greeting": "Welcome back, {name}",
+    "newArrivals": "New arrivals",
+    "bestSellers": "Best sellers",
+    "recommended": "Recommended for you",
+    "previousOrders": "Your previous orders",
+    "emptyState": "Coming soon — your dashboard will fill up as you place orders."
+  },
+  "adminHome": {
+    "title": "Admin dashboard",
+    "ordersToday": "Orders today",
+    "revenueThisMonth": "Revenue this month",
+    "lowStockCount": "Low-stock items",
+    "topShopkeeper": "Top shopkeeper",
+    "emptyState": "No data yet — start by adding products and shopkeepers."
+  },
+  "shopkeepers": {
+    "title": "Shopkeepers",
+    "subtitle": "Create, view, and manage shopkeeper accounts.",
+    "addNew": "Add shopkeeper",
+    "empty": "No shopkeepers yet. Create your first one.",
+    "table": {
+      "shopName": "Shop name",
+      "ownerName": "Owner",
+      "phone": "Phone",
+      "address": "Address",
+      "status": "Status",
+      "createdAt": "Created"
+    },
+    "newTitle": "New shopkeeper",
+    "newSubtitle": "Account is created with the phone number as the initial password. The shopkeeper is asked to change it on first login.",
+    "form": {
+      "shopName": "Shop name",
+      "shopNamePlaceholder": "e.g. Ram Shoe House",
+      "ownerName": "Owner name",
+      "ownerNamePlaceholder": "e.g. Ram Bahadur",
+      "phone": "Phone number",
+      "phonePlaceholder": "98XXXXXXXX",
+      "address": "Address (optional)",
+      "addressPlaceholder": "City, ward, locality",
+      "lat": "Latitude (optional)",
+      "lng": "Longitude (optional)",
+      "submit": "Create shopkeeper",
+      "submitting": "Creating..."
+    },
+    "status": {
+      "active": "Active",
+      "suspended": "Suspended"
+    }
   },
   "landing": {
     "heroTitle": "Wholesale ordering and a free POS, built for Nepal.",
@@ -26,12 +105,25 @@
     "featureLeaderboardBody": "Compete with other shopkeepers and earn rewards every month."
   },
   "auth": {
+    "loginTitle": "Log in to Himova",
+    "loginSubtitle": "Pick your account type to continue.",
+    "shopkeeperTab": "Shopkeeper",
+    "adminTab": "Admin",
     "phoneLabel": "Phone number",
+    "phonePlaceholder": "98XXXXXXXX",
+    "phoneHint": "First-time login: your password is your phone number.",
     "passwordLabel": "Password",
     "emailLabel": "Email",
+    "emailPlaceholder": "you@himova.np",
     "loginButton": "Log in",
-    "verifyOtp": "Verify OTP",
+    "loggingIn": "Logging in...",
+    "logout": "Log out",
     "needHelp": "Need help? Message us on WhatsApp.",
-    "comingSoon": "Coming soon"
+    "welcomeTitle": "Welcome to Himova",
+    "welcomeBody": "Please change your password to continue.",
+    "newPasswordLabel": "New password",
+    "confirmPasswordLabel": "Confirm new password",
+    "savePassword": "Save and continue",
+    "passwordChanged": "Password changed."
   }
 }

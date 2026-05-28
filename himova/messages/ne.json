@@ -10,7 +10,86 @@
     "actions": "कार्यहरू",
     "language": "भाषा",
     "english": "English",
-    "nepali": "नेपाली"
+    "nepali": "नेपाली",
+    "back": "फर्कनुहोस्",
+    "create": "सिर्जना गर्नुहोस्",
+    "edit": "सम्पादन",
+    "delete": "मेटाउनुहोस्",
+    "close": "बन्द गर्नुहोस्",
+    "yes": "हो",
+    "no": "होइन"
+  },
+  "shopNav": {
+    "home": "गृह",
+    "catalog": "क्याटलग",
+    "cart": "कार्ट",
+    "orders": "अर्डरहरू",
+    "stock": "स्टक",
+    "pos": "POS",
+    "customers": "ग्राहकहरू",
+    "reports": "रिपोर्ट",
+    "leaderboard": "लिडरबोर्ड",
+    "settings": "सेटिङ"
+  },
+  "adminNav": {
+    "dashboard": "ड्यासबोर्ड",
+    "products": "उत्पादनहरू",
+    "shopkeepers": "पसलेहरू",
+    "orders": "अर्डरहरू",
+    "stock": "स्टक",
+    "leaderboard": "लिडरबोर्ड",
+    "reports": "रिपोर्ट",
+    "settings": "सेटिङ"
+  },
+  "shopHome": {
+    "greeting": "स्वागत छ, {name}",
+    "newArrivals": "नयाँ आगमन",
+    "bestSellers": "सबैभन्दा बिक्री",
+    "recommended": "तपाईंका लागि सिफारिस",
+    "previousOrders": "तपाईंको अघिल्लो अर्डर",
+    "emptyState": "चाँडै आउँदैछ — अर्डर गर्न थालेपछि ड्यासबोर्ड भरिनेछ।"
+  },
+  "adminHome": {
+    "title": "एडमिन ड्यासबोर्ड",
+    "ordersToday": "आजको अर्डर",
+    "revenueThisMonth": "यो महिनाको आम्दानी",
+    "lowStockCount": "कम स्टक भएका वस्तु",
+    "topShopkeeper": "शीर्ष पसले",
+    "emptyState": "हाल कुनै डाटा छैन — पहिले उत्पादन र पसले थप्नुहोस्।"
+  },
+  "shopkeepers": {
+    "title": "पसलेहरू",
+    "subtitle": "पसलेका खाताहरू सिर्जना, हेर्नुहोस् र व्यवस्थापन गर्नुहोस्।",
+    "addNew": "पसले थप्नुहोस्",
+    "empty": "अहिले कुनै पसले छैन। पहिलो थप्नुहोस्।",
+    "table": {
+      "shopName": "पसलको नाम",
+      "ownerName": "मालिक",
+      "phone": "फोन",
+      "address": "ठेगाना",
+      "status": "स्थिति",
+      "createdAt": "सिर्जना मिति"
+    },
+    "newTitle": "नयाँ पसले",
+    "newSubtitle": "खाता पहिलो पटक फोन नम्बरलाई पासवर्डको रूपमा प्रयोग गरेर बनाइन्छ। पहिलो लगइनमा पासवर्ड परिवर्तन गर्न सोधिन्छ।",
+    "form": {
+      "shopName": "पसलको नाम",
+      "shopNamePlaceholder": "जस्तै, राम सू हाउस",
+      "ownerName": "मालिकको नाम",
+      "ownerNamePlaceholder": "जस्तै, राम बहादुर",
+      "phone": "फोन नम्बर",
+      "phonePlaceholder": "98XXXXXXXX",
+      "address": "ठेगाना (वैकल्पिक)",
+      "addressPlaceholder": "सहर, वडा, स्थान",
+      "lat": "अक्षांश (वैकल्पिक)",
+      "lng": "देशान्तर (वैकल्पिक)",
+      "submit": "पसले सिर्जना गर्नुहोस्",
+      "submitting": "सिर्जना हुँदै..."
+    },
+    "status": {
+      "active": "सक्रिय",
+      "suspended": "निलम्बित"
+    }
   },
   "landing": {
     "heroTitle": "नेपालका लागि होलसेल अर्डर र निःशुल्क POS।",
@@ -26,12 +105,25 @@
     "featureLeaderboardBody": "अरू पसलेहरूसँग प्रतिस्पर्धा गर्नुहोस् र हरेक महिना पुरस्कार जित्नुहोस्।"
   },
   "auth": {
+    "loginTitle": "हिमोवामा लगइन गर्नुहोस्",
+    "loginSubtitle": "जारी राख्न आफ्नो खाताको प्रकार छान्नुहोस्।",
+    "shopkeeperTab": "पसले",
+    "adminTab": "एडमिन",
     "phoneLabel": "फोन नम्बर",
+    "phonePlaceholder": "98XXXXXXXX",
+    "phoneHint": "पहिलो पटक लगइन गर्दा पासवर्ड तपाईंको फोन नम्बर हो।",
     "passwordLabel": "पासवर्ड",
     "emailLabel": "इमेल",
+    "emailPlaceholder": "you@himova.np",
     "loginButton": "लगइन",
-    "verifyOtp": "OTP प्रमाणित गर्नुहोस्",
+    "loggingIn": "लगइन हुँदै...",
+    "logout": "लगआउट",
     "needHelp": "मद्दत चाहियो? हामीलाई व्हाट्सएपमा सन्देश गर्नुहोस्।",
-    "comingSoon": "चाँडै आउँदैछ"
+    "welcomeTitle": "हिमोवामा स्वागत छ",
+    "welcomeBody": "जारी राख्न कृपया आफ्नो पासवर्ड परिवर्तन गर्नुहोस्।",
+    "newPasswordLabel": "नयाँ पासवर्ड",
+    "confirmPasswordLabel": "नयाँ पासवर्ड पुनः टाइप गर्नुहोस्",
+    "savePassword": "बचत गरी जारी राख्नुहोस्",
+    "passwordChanged": "पासवर्ड परिवर्तन गरियो।"
   }
 }
