@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auction Timeline — NEPSE Auction Analyzer</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div id="header-slot"></div>
+
+  <div class="app">
+    <section class="page-head">
+      <h1>Step 2 — Auction Timeline (Event-Window Study)</h1>
+      <p>Cumulative returns and volume z-score around the auction window
+        (open → close), plus the historical comparable cohort that the
+        cutoff is most likely to track.</p>
+    </section>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Select Ticker</h2>
+        <div class="row gap-1">
+          <select id="tickerSelect" style="min-width:240px;"></select>
+          <span class="muted small" id="windowLabel"></span>
+        </div>
+      </div>
+      <div id="tickerEmpty"></div>
+      <div id="tickerView" class="hidden">
+
+        <!-- KPIs strip -->
+        <div class="grid grid-auto" id="kpiStrip"></div>
+
+        <!-- Event window chart -->
+        <div class="card-header mt-3">
+          <h3>Price chart with auction window highlighted</h3>
+          <span class="muted small" id="eventCaption"></span>
+        </div>
+        <div class="chart-box tall"><canvas id="eventChart"></canvas></div>
+
+        <!-- Volume chart -->
+        <div class="card-header mt-3">
+          <h3>Volume — z-score during auction vs prior 60 sessions</h3>
+        </div>
+        <div class="chart-box short"><canvas id="volChart"></canvas></div>
+
+        <!-- Event returns table -->
+        <div class="card-header mt-3"><h3>Cumulative returns by window</h3></div>
+        <div class="table-wrap">
+          <table id="eventTable">
+            <thead><tr><th>Window</th><th>Cumulative Return</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparable hydropower auctions -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Comparable Auctions Cohort</h2>
+        <span class="pill" id="cohortPill"></span>
+      </div>
+      <p class="muted small mt-1" style="margin-bottom:10px;">
+        Hydropower auctions (2024–2025) — empirical median / mean discount
+        from LTP to cutoff. Use this as the empirical anchor for the bid
+        you'll set on the morning of auction close.
+      </p>
+      <div class="grid grid-auto" id="cohortStats"></div>
+      <div class="table-wrap mt-2">
+        <table id="cohortTable">
+          <thead><tr><th>Symbol</th><th>LTP (NPR)</th><th>Cutoff (NPR)</th><th>Discount</th><th>Date</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bid recommender -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Empirical Bid Recommender</h2>
+        <span class="muted small">Three-tier strategy from comparable cohort percentiles.</span>
+      </div>
+      <div class="summary-grid" id="strategies"></div>
+
+      <div class="card-header mt-3"><h3>Bid → Allotment Probability Table</h3></div>
+      <div class="table-wrap">
+        <table id="probTable">
+          <thead><tr><th>Discount %</th><th>Bid Price (NPR)</th><th>Total Cost (NPR)</th><th>Empirical Allotment Probability</th><th>Profit @ current LTP</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="app-footer">Next: <a href="technical.html">Step 3 — Technical Analysis</a>.</p>
+  </div>
+
+  <script src="../js/core.js"></script>
+  <script src="../js/stats.js"></script>
+  <script src="../js/sectors.js"></script>
+  <script src="../js/data-io.js"></script>
+  <script src="../js/auction.js"></script>
+  <script src="../js/charts.js"></script>
+  <script src="../script.js"></script>
+  <script>
+    NEPSE.mountHeader("timeline");
+
+    function refreshTickerList() {
+      const sel = document.getElementById("tickerSelect");
+      sel.innerHTML = window.tickerOptions();
+    }
+    refreshTickerList();
+
+    document.getElementById("windowLabel").textContent = (() => {
+      const a = NEPSE.loadState().auction;
+      return a.openDate && a.closeDate ? `Auction window: ${a.openDate} → ${a.closeDate}` : "Auction window not set";
+    })();
+
+    function render() {
+      const state = NEPSE.loadState();
+      if (!state.tickers.length) {
+        document.getElementById("tickerEmpty").innerHTML = emptyState(
+          "No tickers loaded",
+          "Add tickers in Step 1 — Data & Setup, or load the BNHC sample.",
+          "data.html", "Go to Setup"
+        );
+        document.getElementById("tickerView").classList.add("hidden");
+        renderCohort();
+        renderRecommender(null);
+        return;
+      }
+      document.getElementById("tickerEmpty").innerHTML = "";
+      document.getElementById("tickerView").classList.remove("hidden");
+
+      const symbol = document.getElementById("tickerSelect").value || state.tickers[0].symbol;
+      const t = NEPSE.findTicker(state, symbol);
+      if (!t) return;
+
+      // KPI strip
+      document.getElementById("kpiStrip").innerHTML = [
+        ["Symbol", t.symbol],
+        ["LTP", NEPSE.fmtNpr(t.ltp)],
+        ["Floor bid", NEPSE.fmtNpr(t.floorPrice)],
+        ["Bars available", `${t.ohlcv?.length || 0}`],
+        ["Sector", Sectors.get(state.sector).label],
+      ].map(([k, v]) =>
+        `<div class="stat"><div class="label">${k}</div><div class="value" style="font-size:18px;">${NEPSE.escapeHtml(String(v))}</div></div>`
+      ).join("");
+
+      // Event window
+      const ew = Auction.eventWindow(t, state.auction.openDate, state.auction.closeDate);
+      if (!ew) {
+        document.getElementById("eventCaption").textContent = "Set auction dates in Setup to enable event window.";
+      } else {
+        const open = t.ohlcv[ew.openIdx];
+        const close = t.ohlcv[ew.closeIdx];
+        document.getElementById("eventCaption").textContent =
+          `Open ≈ ${open?.date || "—"} (${NEPSE.fmtNpr(open?.close)}) | Close ≈ ${close?.date || "—"} (${NEPSE.fmtNpr(close?.close)})`;
+        Charts.eventWindowChart(document.getElementById("eventChart"), t.ohlcv, ew.openIdx, ew.closeIdx);
+        Charts.volumeChart(document.getElementById("volChart"), t.ohlcv);
+
+        const tbody = document.querySelector("#eventTable tbody");
+        tbody.innerHTML = Object.entries(ew.eventReturns)
+          .map(([k, v]) => `<tr><td>${k}</td><td>${v === null ? "—" : NEPSE.fmtPct(v)}</td></tr>`)
+          .concat(`<tr><td>Volume z-score (auction vs prior 60d)</td><td>${ew.volZScore === null ? "—" : ew.volZScore.toFixed(2)}</td></tr>`)
+          .join("");
+      }
+
+      renderCohort();
+      renderRecommender(t);
+    }
+
+    function renderCohort() {
+      const history = DataIO.getHydroComparables();
+      const summary = Auction.summarizeComparables(history);
+      document.getElementById("cohortPill").textContent = `${history.length} historical auctions`;
+      document.getElementById("cohortStats").innerHTML = [
+        ["Mean discount", NEPSE.fmtPct(summary.meanDiscount)],
+        ["Median discount", NEPSE.fmtPct(summary.medianDiscount)],
+        ["Std deviation", NEPSE.fmtPct(summary.stdDiscount)],
+        ["Min discount", NEPSE.fmtPct(summary.bands.min)],
+        ["Max discount", NEPSE.fmtPct(summary.bands.max)],
+        ["P25 / P75", `${NEPSE.fmtPct(summary.bands.p25)} / ${NEPSE.fmtPct(summary.bands.p75)}`],
+      ].map(([k, v]) =>
+        `<div class="stat"><div class="label">${k}</div><div class="value" style="font-size:18px;">${NEPSE.escapeHtml(String(v))}</div></div>`
+      ).join("");
+      const tbody = document.querySelector("#cohortTable tbody");
+      tbody.innerHTML = history.map((c) =>
+        `<tr><td>${NEPSE.escapeHtml(c.symbol)}</td><td>${NEPSE.fmt2(c.ltp)}</td><td>${NEPSE.fmt2(c.cutoff)}</td><td>${NEPSE.fmtPct(c.discount)}</td><td>${c.date}</td></tr>`
+      ).join("");
+    }
+
+    function renderRecommender(ticker) {
+      const stratHost = document.getElementById("strategies");
+      const probTbody = document.querySelector("#probTable tbody");
+      if (!ticker || !ticker.ltp) {
+        stratHost.innerHTML = `<div class="muted small">Select a ticker with an LTP to see bid strategies.</div>`;
+        probTbody.innerHTML = "";
+        return;
+      }
+      const history = DataIO.getHydroComparables();
+      const strats = Auction.strategies(history, ticker.ltp);
+      stratHost.innerHTML = strats.map((s, i) => {
+        const cls = i === 0 ? "conservative" : i === 1 ? "balanced" : "aggressive";
+        const cost = (ticker.qty || 1000) * s.bid;
+        return `<div class="strategy ${cls}">
+          <h3>${NEPSE.escapeHtml(s.title)}</h3>
+          <div class="price">${NEPSE.fmtNpr(s.bid)}</div>
+          <div class="meta">
+            ${(s.discount * 100).toFixed(2)}% below LTP<br/>
+            Total: ${NEPSE.fmtNpr(cost)}<br/>
+            <span class="badge">~${(s.prob * 100).toFixed(0)}% allotment odds</span><br/>
+            <span style="opacity:0.85;">${NEPSE.escapeHtml(s.note)}</span>
+          </div>
+        </div>`;
+      }).join("");
+
+      const probTable = Auction.bidProbabilityTable(history, ticker.ltp);
+      const qty = ticker.qty || 1000;
+      probTbody.innerHTML = probTable.map((row) => {
+        const profit = (ticker.ltp - row.bid) * qty;
+        const isRecommended = Math.abs(row.discountPct - Math.round(strats[1].discount * 100)) < 1.5;
+        return `<tr ${isRecommended ? 'class="recommended-row"' : ""}>
+          <td>${row.discountPct}% ${isRecommended ? "★" : ""}</td>
+          <td>${NEPSE.fmt2(row.bid)}</td>
+          <td>${NEPSE.fmtNpr(row.bid * qty)}</td>
+          <td>${(row.prob * 100).toFixed(1)}% (${row.winners}/${row.n})</td>
+          <td>${NEPSE.fmtNpr(profit)} (${(((ticker.ltp - row.bid) / ticker.ltp) * 100).toFixed(1)}%)</td>
+        </tr>`;
+      }).join("");
+    }
+
+    document.getElementById("tickerSelect").addEventListener("change", render);
+    render();
+  </script>
+</body>
+</html>

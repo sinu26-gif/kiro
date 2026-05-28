@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fundamental Analysis — NEPSE Auction Analyzer</title>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+  <div id="header-slot"></div>
+
+  <div class="app">
+    <section class="page-head">
+      <h1>Step 4 — Fundamental Analysis</h1>
+      <p>Common ratios benchmarked against sector medians, sector-specific
+        KPIs, plus DCF + DDM intrinsic-value envelope (bear / base / bull).
+        All combined into a -5 to +5 fundamental scorecard.</p>
+    </section>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Select Ticker</h2>
+        <div class="row gap-1">
+          <select id="tickerSelect" style="min-width:240px;"></select>
+          <button class="btn btn-accent btn-sm" id="runAll">Score All Tickers</button>
+        </div>
+      </div>
+      <div id="tickerEmpty"></div>
+
+      <div id="tickerView" class="hidden">
+        <div class="grid grid-3 mt-2">
+          <div class="card" style="margin:0;">
+            <h3>Fundamental Score</h3>
+            <canvas class="score-gauge" id="scoreGauge"></canvas>
+            <div class="row between mt-1"><span class="muted small">Range: -5 to +5</span><span id="scoreLabel" class="score-chip"></span></div>
+          </div>
+          <div class="card" style="margin:0; grid-column: span 2;">
+            <h3>Component Breakdown</h3>
+            <div class="table-wrap">
+              <table id="componentTable">
+                <thead><tr><th>Component</th><th>Score</th><th>Detail</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-header mt-3"><h3>Common Ratios vs Sector Median</h3></div>
+        <div class="table-wrap">
+          <table id="ratioTable">
+            <thead><tr><th>Ratio</th><th>Value</th><th>Sector Median</th><th>Score (-1..+1)</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="card-header mt-3"><h3>Sector-Specific KPIs</h3></div>
+        <div class="table-wrap">
+          <table id="kpiTable">
+            <thead><tr><th>KPI</th><th>Value</th><th>Weight</th><th>Score</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="card-header mt-3"><h3>Intrinsic Value Envelope (DCF + DDM)</h3></div>
+        <div class="grid grid-3" id="envelope"></div>
+
+        <div class="alert mt-2" id="valuationNote"></div>
+      </div>
+    </div>
+
+    <p class="app-footer">Next: <a href="macro.html">Step 5 — Macro &amp; Budget</a>.</p>
+  </div>
+
+  <script src="../js/core.js"></script>
+  <script src="../js/stats.js"></script>
+  <script src="../js/sectors.js"></script>
+  <script src="../js/data-io.js"></script>
+  <script src="../js/fundamental.js"></script>
+  <script src="../js/charts.js"></script>
+  <script src="../script.js"></script>
+  <script>
+    NEPSE.mountHeader("fundamental");
+    document.getElementById("tickerSelect").innerHTML = window.tickerOptions();
+
+    function classifyChip(score) {
+      if (score >= 1.5) return "bull";
+      if (score <= -1.5) return "bear";
+      if (Math.abs(score) >= 0.5) return "warn";
+      return "";
+    }
+
+    function renderOne(symbol) {
+      const state = NEPSE.loadState();
+      const t = NEPSE.findTicker(state, symbol);
+      if (!t) return;
+
+      const sc = Fundamental.scorecard(state.sector, t);
+      state.results = state.results || {};
+      state.results[symbol] = state.results[symbol] || {};
+      state.results[symbol].fundamental = {
+        score: sc.score, label: sc.label, components: sc.components, intrinsic: sc.intrinsic,
+      };
+      NEPSE.saveState(state);
+
+      Charts.scoreGauge(document.getElementById("scoreGauge"), sc.score, sc.label);
+      const chip = document.getElementById("scoreLabel");
+      chip.className = "score-chip " + classifyChip(sc.score);
+      chip.innerHTML = `<span class="num">${sc.score.toFixed(2)}</span><span class="label">${NEPSE.escapeHtml(sc.label)}</span>`;
+
+      document.querySelector("#componentTable tbody").innerHTML = sc.components.map((c) =>
+        `<tr><td>${NEPSE.escapeHtml(c.name)}</td><td>${c.raw.toFixed(2)}</td><td>${NEPSE.escapeHtml(c.detail)}</td></tr>`
+      ).join("");
+
+      // Ratio table
+      const ratioRows = sc.ratioContribs;
+      document.querySelector("#ratioTable tbody").innerHTML = ratioRows.length
+        ? ratioRows.map((r) =>
+            `<tr><td>${NEPSE.escapeHtml(r.key)}</td><td>${typeof r.value === "number" ? r.value.toFixed(3) : r.value}</td><td>${typeof r.sectorMedian === "number" ? r.sectorMedian.toFixed(3) : r.sectorMedian}</td><td>${r.score.toFixed(2)}</td></tr>`
+          ).join("")
+        : `<tr><td colspan="4" class="muted">No common-ratio inputs available — fill them in Step 1.</td></tr>`;
+
+      // KPI table
+      const kpiRows = sc.sectorContribs;
+      document.querySelector("#kpiTable tbody").innerHTML = kpiRows.length
+        ? kpiRows.map((k) =>
+            `<tr><td>${NEPSE.escapeHtml(k.label)}</td><td>${typeof k.value === "number" ? k.value : NEPSE.escapeHtml(String(k.value))}</td><td>${k.weight.toFixed(1)}</td><td>${k.score.toFixed(2)}</td></tr>`
+          ).join("")
+        : `<tr><td colspan="4" class="muted">No sector KPIs available — fill them in Step 1.</td></tr>`;
+
+      // Envelope
+      const env = sc.intrinsic;
+      const envHtml = ["bear", "base", "bull"].map((k) => {
+        const v = env[k]?.intrinsic;
+        const dcfV = env[k]?.dcf;
+        const ddmV = env[k]?.ddm;
+        const cls = k === "bull" ? "conservative" : k === "base" ? "balanced" : "aggressive";
+        return `<div class="strategy ${cls}">
+          <h3>${k.toUpperCase()} case</h3>
+          <div class="price">${v ? NEPSE.fmtNpr(v) : "—"}</div>
+          <div class="meta">
+            DCF: ${dcfV ? NEPSE.fmt2(dcfV) : "—"}<br/>
+            DDM: ${ddmV ? NEPSE.fmt2(ddmV) : "—"}<br/>
+            ${v && t.ltp ? `<span class="badge">${(((v - t.ltp) / t.ltp) * 100).toFixed(1)}% vs LTP</span>` : ""}
+          </div>
+        </div>`;
+      }).join("");
+      document.getElementById("envelope").innerHTML = envHtml;
+
+      // Valuation note
+      const baseIv = env.base?.intrinsic;
+      let note = "";
+      if (baseIv && t.ltp) {
+        const upside = (baseIv - t.ltp) / t.ltp;
+        if (upside > 0.20) note = `Base-case intrinsic suggests <strong>${(upside*100).toFixed(1)}% upside</strong> — reasonably undervalued.`;
+        else if (upside > 0.05) note = `Base-case intrinsic suggests <strong>${(upside*100).toFixed(1)}% upside</strong> — fairly valued, slight margin.`;
+        else if (upside > -0.05) note = `Base-case intrinsic close to LTP — <strong>fair value</strong>.`;
+        else note = `Base-case intrinsic <strong>${(upside*100).toFixed(1)}%</strong> below LTP — likely overvalued; require deeper auction discount.`;
+      } else {
+        note = "Provide EPS and dividend yield in Step 1 to compute DCF/DDM intrinsic value.";
+      }
+      document.getElementById("valuationNote").innerHTML = note;
+    }
+
+    function renderAll() {
+      const state = NEPSE.loadState();
+      if (!state.tickers.length) {
+        document.getElementById("tickerEmpty").innerHTML = emptyState(
+          "No tickers loaded",
+          "Add tickers in Step 1 or load the BNHC sample.",
+          "data.html", "Go to Setup"
+        );
+        document.getElementById("tickerView").classList.add("hidden");
+        return;
+      }
+      document.getElementById("tickerEmpty").innerHTML = "";
+      document.getElementById("tickerView").classList.remove("hidden");
+      renderOne(document.getElementById("tickerSelect").value || state.tickers[0].symbol);
+    }
+
+    document.getElementById("tickerSelect").addEventListener("change", renderAll);
+    document.getElementById("runAll").addEventListener("click", () => {
+      const state = NEPSE.loadState();
+      state.results = state.results || {};
+      state.tickers.forEach((t) => {
+        const sc = Fundamental.scorecard(state.sector, t);
+        state.results[t.symbol] = state.results[t.symbol] || {};
+        state.results[t.symbol].fundamental = {
+          score: sc.score, label: sc.label, components: sc.components, intrinsic: sc.intrinsic,
+        };
+      });
+      NEPSE.saveState(state);
+      NEPSE.toast(`Scored ${state.tickers.length} tickers`, "success");
+      renderAll();
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>

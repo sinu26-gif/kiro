@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data &amp; Auction Setup — NEPSE Auction Analyzer</title>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+  <div id="header-slot"></div>
+
+  <div class="app">
+    <section class="page-head">
+      <h1>Step 1 — Data &amp; Auction Setup</h1>
+      <p>Define the sector, auction window, tickers and (optionally) upload OHLCV CSVs.
+        Everything is stored locally in your browser. No data leaves your device.</p>
+    </section>
+
+    <!-- Sector & auction setup -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Sector &amp; Auction Window</h2>
+        <span class="pill" id="ticker-count-pill"></span>
+      </div>
+      <div class="grid grid-3">
+        <div class="field">
+          <label>Sector</label>
+          <select id="sector"></select>
+        </div>
+        <div class="field">
+          <label>Auction Type</label>
+          <select id="auctionType">
+            <option>Unsubscribed Rights</option>
+            <option>Unsubscribed IPO</option>
+            <option>Unsubscribed FPO</option>
+            <option>Promoter-to-Public</option>
+            <option>Forfeited</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Auction Open Date</label>
+          <input type="date" id="openDate" />
+        </div>
+        <div class="field">
+          <label>Auction Close Date</label>
+          <input type="date" id="closeDate" />
+        </div>
+        <div class="field">
+          <label>Budget Release Date</label>
+          <input type="date" id="budgetDate" />
+        </div>
+        <div class="field">
+          <label>Budget FY</label>
+          <input type="text" id="budgetFY" placeholder="FY 2083/84 BS (2026/27 AD)" />
+        </div>
+      </div>
+      <div class="row mt-2">
+        <button class="btn btn-accent" id="saveSetup">Save Setup</button>
+        <button class="btn btn-ghost" id="loadSampleBtn">Load BNHC + Hydro Sample</button>
+        <span class="muted small">Sample: 5 hydropower tickers with 3 years of synthetic OHLCV.</span>
+      </div>
+    </div>
+
+    <!-- Add ticker -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Add / Edit Ticker</h2>
+        <span class="muted small">Sector-specific KPI fields update automatically.</span>
+      </div>
+      <div class="grid grid-3">
+        <div class="field">
+          <label>Symbol</label>
+          <input type="text" id="symbol" placeholder="e.g. BNHC" />
+        </div>
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="name" placeholder="e.g. Buddhabhumi Nepal Hydropower" />
+        </div>
+        <div class="field">
+          <label>LTP (NPR)</label>
+          <input type="number" id="ltp" step="0.01" min="0" />
+        </div>
+        <div class="field">
+          <label>Auction Floor Bid (NPR)</label>
+          <input type="number" id="floorPrice" step="0.01" min="0" />
+        </div>
+        <div class="field">
+          <label>Quantity / Allocation Target (kittas)</label>
+          <input type="number" id="qty" step="10" min="0" />
+        </div>
+        <div class="field">
+          <label>OHLCV CSV (optional)</label>
+          <input type="file" id="ohlcvFile" accept=".csv,text/csv" />
+        </div>
+      </div>
+
+      <hr />
+      <h3>Common Fundamentals</h3>
+      <div class="grid grid-4" id="fundForm"></div>
+
+      <hr />
+      <h3>Sector-Specific KPIs</h3>
+      <div class="grid grid-4" id="sectorKpiForm"></div>
+
+      <div class="row mt-2">
+        <button class="btn btn-accent" id="saveTicker">Save / Update Ticker</button>
+        <button class="btn btn-ghost" id="syntheticBtn">Generate 3-yr Synthetic OHLCV (use LTP)</button>
+        <button class="btn btn-ghost" id="clearForm">Clear Form</button>
+      </div>
+      <div class="alert mt-2">
+        <strong>CSV format accepted:</strong> headers
+        <code>date, open, high, low, close, volume</code> (case-insensitive). Synonyms
+        like <code>ltp</code> for close, <code>qty</code> for volume are supported.
+      </div>
+    </div>
+
+    <!-- Ticker list -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Auction Ticker List</h2>
+        <div class="row gap-1">
+          <button class="btn btn-ghost btn-sm" id="exportBtn">Export</button>
+          <label class="btn btn-ghost btn-sm" for="importFile">Import</label>
+          <input type="file" id="importFile" accept="application/json" class="hidden" />
+        </div>
+      </div>
+      <div id="tickerGrid" class="grid grid-auto"></div>
+    </div>
+
+    <p class="app-footer">Tip: once tickers are saved, head to <a href="timeline.html">Step 2 — Auction Timeline</a>.</p>
+  </div>
+
+  <script src="../js/core.js"></script>
+  <script src="../js/stats.js"></script>
+  <script src="../js/sectors.js"></script>
+  <script src="../js/data-io.js"></script>
+  <script src="../script.js"></script>
+  <script>
+    NEPSE.mountHeader("data");
+
+    /* --- populate sector select --- */
+    const sectorSel = document.getElementById("sector");
+    sectorSel.innerHTML = Sectors.list().map((s) => `<option value="${s.key}">${s.label}</option>`).join("");
+
+    /* --- load state into setup form --- */
+    function loadSetupForm() {
+      const s = NEPSE.loadState();
+      sectorSel.value = s.sector;
+      document.getElementById("auctionType").value = s.auction.type || "Unsubscribed Rights";
+      document.getElementById("openDate").value = s.auction.openDate || "";
+      document.getElementById("closeDate").value = s.auction.closeDate || "";
+      document.getElementById("budgetDate").value = s.auction.budgetDate || "";
+      document.getElementById("budgetFY").value = s.auction.budgetFY || "";
+      renderTickers();
+      renderFundamentalForm();
+      renderSectorKpiForm();
+      document.getElementById("ticker-count-pill").textContent = `${s.tickers.length} tickers`;
+    }
+
+    /* --- render fundamental form fields --- */
+    function renderFundamentalForm(values = {}) {
+      const ratios = Sectors.commonRatios();
+      document.getElementById("fundForm").innerHTML = ratios
+        .map((r) => `
+          <div class="field">
+            <label>${NEPSE.escapeHtml(r.label)} ${r.unit ? `<span class="muted small">(${NEPSE.escapeHtml(r.unit)})</span>` : ""}</label>
+            <input type="number" step="0.0001" data-fund="${r.key}" value="${values[r.key] ?? ""}" />
+          </div>`).join("");
+    }
+
+    /* --- render sector KPI form fields --- */
+    function renderSectorKpiForm(values = {}) {
+      const sector = Sectors.get(sectorSel.value);
+      document.getElementById("sectorKpiForm").innerHTML = sector.kpis
+        .map((k) => `
+          <div class="field">
+            <label>${NEPSE.escapeHtml(k.label)} ${k.unit ? `<span class="muted small">(${NEPSE.escapeHtml(k.unit)})</span>` : ""}</label>
+            <input type="${k.unit === 'text' ? 'text' : 'number'}" step="0.0001" data-skpi="${k.key}" value="${values[k.key] ?? ""}" />
+          </div>`).join("");
+    }
+
+    sectorSel.addEventListener("change", () => renderSectorKpiForm({}));
+
+    /* --- save setup --- */
+    document.getElementById("saveSetup").addEventListener("click", () => {
+      const s = NEPSE.loadState();
+      s.sector = sectorSel.value;
+      s.auction.type = document.getElementById("auctionType").value;
+      s.auction.openDate = document.getElementById("openDate").value;
+      s.auction.closeDate = document.getElementById("closeDate").value;
+      s.auction.budgetDate = document.getElementById("budgetDate").value;
+      s.auction.budgetFY = document.getElementById("budgetFY").value;
+      s.lastUpdated = new Date().toISOString();
+      NEPSE.saveState(s);
+      NEPSE.toast("Setup saved", "success");
+      loadSetupForm();
+    });
+
+    /* --- save ticker --- */
+    document.getElementById("saveTicker").addEventListener("click", async () => {
+      const symbol = (document.getElementById("symbol").value || "").trim().toUpperCase();
+      if (!symbol) { NEPSE.toast("Symbol is required", "warn"); return; }
+      const s = NEPSE.loadState();
+      const existing = NEPSE.findTicker(s, symbol) || {};
+      const ticker = {
+        symbol,
+        name: document.getElementById("name").value.trim(),
+        ltp: parseFloat(document.getElementById("ltp").value) || existing.ltp || 0,
+        floorPrice: parseFloat(document.getElementById("floorPrice").value) || existing.floorPrice || 0,
+        qty: parseInt(document.getElementById("qty").value) || existing.qty || 0,
+        fundamentals: { ...(existing.fundamentals || {}) },
+        sectorKpis: { ...(existing.sectorKpis || {}) },
+        ohlcv: existing.ohlcv || [],
+      };
+      document.querySelectorAll("#fundForm [data-fund]").forEach((el) => {
+        const v = parseFloat(el.value);
+        if (isFinite(v)) ticker.fundamentals[el.dataset.fund] = v;
+      });
+      document.querySelectorAll("#sectorKpiForm [data-skpi]").forEach((el) => {
+        const v = el.value === "" ? null : (isNaN(parseFloat(el.value)) ? el.value : parseFloat(el.value));
+        if (v !== null) ticker.sectorKpis[el.dataset.skpi] = v;
+      });
+
+      // CSV upload
+      const file = document.getElementById("ohlcvFile").files[0];
+      if (file) {
+        try {
+          const txt = await DataIO.readFileText(file);
+          const rows = DataIO.csvToObjects(txt);
+          const ohlcv = DataIO.normalizeOhlcv(rows);
+          if (ohlcv.length < 30) {
+            NEPSE.toast(`Only ${ohlcv.length} valid bars in CSV — check columns`, "warn");
+          }
+          ticker.ohlcv = ohlcv;
+        } catch (e) {
+          NEPSE.toast("Failed to read CSV", "error");
+        }
+      }
+
+      // If no OHLCV at all, generate synthetic from LTP
+      if (!ticker.ohlcv || ticker.ohlcv.length === 0) {
+        if (ticker.ltp > 0) ticker.ohlcv = DataIO.syntheticOhlcv(ticker.symbol, ticker.ltp);
+      }
+
+      NEPSE.upsertTicker(s, ticker);
+      NEPSE.toast(`Saved ticker ${symbol}`, "success");
+      loadSetupForm();
+      clearForm();
+    });
+
+    /* --- generate synthetic OHLCV from current LTP --- */
+    document.getElementById("syntheticBtn").addEventListener("click", () => {
+      const symbol = (document.getElementById("symbol").value || "TEMP").trim().toUpperCase();
+      const ltp = parseFloat(document.getElementById("ltp").value);
+      if (!ltp || ltp <= 0) { NEPSE.toast("Enter LTP first", "warn"); return; }
+      const ohlcv = DataIO.syntheticOhlcv(symbol, ltp);
+      // attach to existing or new ticker draft (only saves on Save)
+      NEPSE.toast(`Generated ${ohlcv.length} synthetic bars (preview only — click Save to persist)`, "info");
+    });
+
+    /* --- clear form --- */
+    function clearForm() {
+      ["symbol","name","ltp","floorPrice","qty"].forEach((id) => (document.getElementById(id).value = ""));
+      document.getElementById("ohlcvFile").value = "";
+      renderFundamentalForm({});
+      renderSectorKpiForm({});
+    }
+    document.getElementById("clearForm").addEventListener("click", clearForm);
+
+    /* --- render ticker grid --- */
+    function renderTickers() {
+      const s = NEPSE.loadState();
+      const grid = document.getElementById("tickerGrid");
+      if (!s.tickers.length) {
+        grid.innerHTML = emptyState(
+          "No tickers yet",
+          "Add your first ticker above, or load the BNHC sample.",
+          null, null
+        );
+        return;
+      }
+      grid.innerHTML = s.tickers.map((t) => {
+        const bars = t.ohlcv?.length || 0;
+        return `<div class="ticker-card">
+          <div class="head">
+            <div>
+              <div class="symbol">${NEPSE.escapeHtml(t.symbol)}</div>
+              <div class="name">${NEPSE.escapeHtml(t.name || "")}</div>
+            </div>
+            <div class="ltp">${NEPSE.fmtNpr(t.ltp)}</div>
+          </div>
+          <div class="row">
+            <div>Floor bid</div><div><b>${NEPSE.fmtNpr(t.floorPrice)}</b></div>
+          </div>
+          <div class="row">
+            <div>Target qty</div><div><b>${NEPSE.fmt0(t.qty)}</b></div>
+          </div>
+          <div class="row">
+            <div>OHLCV bars</div><div><b>${bars}</b></div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-ghost btn-sm" data-edit="${t.symbol}">Edit</button>
+            <button class="btn btn-bear btn-sm" data-remove="${t.symbol}">Remove</button>
+          </div>
+        </div>`;
+      }).join("");
+
+      grid.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", (e) => {
+        const sym = e.target.dataset.edit;
+        const t = NEPSE.findTicker(NEPSE.loadState(), sym);
+        if (!t) return;
+        document.getElementById("symbol").value = t.symbol;
+        document.getElementById("name").value = t.name || "";
+        document.getElementById("ltp").value = t.ltp || "";
+        document.getElementById("floorPrice").value = t.floorPrice || "";
+        document.getElementById("qty").value = t.qty || "";
+        renderFundamentalForm(t.fundamentals || {});
+        renderSectorKpiForm(t.sectorKpis || {});
+        window.scrollTo({ top: 200, behavior: "smooth" });
+      }));
+      grid.querySelectorAll("[data-remove]").forEach((b) => b.addEventListener("click", (e) => {
+        const sym = e.target.dataset.remove;
+        if (!confirm(`Remove ticker ${sym}?`)) return;
+        NEPSE.removeTicker(NEPSE.loadState(), sym);
+        loadSetupForm();
+        NEPSE.toast(`Removed ${sym}`, "info");
+      }));
+    }
+
+    /* --- sample loader --- */
+    document.getElementById("loadSampleBtn").addEventListener("click", () => {
+      DataIO.loadHydropowerSampleIntoState();
+      NEPSE.toast("Loaded BNHC + 4 hydropower comparables", "success");
+      loadSetupForm();
+    });
+
+    /* --- export / import --- */
+    document.getElementById("exportBtn").addEventListener("click", () => NEPSE.exportState());
+    document.getElementById("importFile").addEventListener("change", (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      NEPSE.importState(f, (err) => {
+        if (err) NEPSE.toast("Failed to import", "error");
+        else { NEPSE.toast("Imported", "success"); loadSetupForm(); }
+      });
+    });
+
+    loadSetupForm();
+  </script>
+</body>
+</html>
