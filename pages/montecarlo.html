@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monte Carlo — NEPSE Auction Analyzer</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div id="header-slot"></div>
+
+  <div class="app">
+    <section class="page-head">
+      <h1>Step 6 — Monte Carlo Simulation</h1>
+      <p>GBM + Merton Jump-Diffusion with EWMA / GARCH(1,1) volatility,
+        regime-mixed across the 3 budget scenarios. Every horizon reports
+        the headline metric for an auction bidder: <strong>P(price &gt; floor bid)</strong>.</p>
+    </section>
+
+    <!-- Settings -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Settings</h2>
+        <span class="muted small">Defaults are sensible for NEPSE; tune to taste.</span>
+      </div>
+      <div class="grid grid-4">
+        <div class="field"><label>Paths</label><input type="number" id="paths" min="1000" max="100000" step="1000" /></div>
+        <div class="field"><label>Horizons (days, comma-sep)</label><input type="text" id="horizons" /></div>
+        <div class="field">
+          <label>Volatility model</label>
+          <select id="volModel">
+            <option value="ewma">EWMA (RiskMetrics, λ=0.94)</option>
+            <option value="garch">GARCH(1,1) — slower, more accurate</option>
+            <option value="hist">Historical σ</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Use Jump-Diffusion?</label>
+          <select id="useJumpDiffusion">
+            <option value="true">Yes (recommended)</option>
+            <option value="false">No (pure GBM)</option>
+          </select>
+        </div>
+        <div class="field"><label>Random Seed</label><input type="number" id="seed" /></div>
+      </div>
+      <div class="row mt-2">
+        <button class="btn btn-accent" id="runOne">Run For Selected Ticker</button>
+        <button class="btn btn-bull" id="runAll">Run For All Tickers</button>
+        <button class="btn btn-ghost" id="saveSettings">Save Settings</button>
+        <span class="muted small" id="runStatus"></span>
+      </div>
+      <div class="progress mt-2"><div class="progress-bar" id="progressBar"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Select Ticker to View</h2>
+        <select id="tickerSelect" style="min-width:240px;"></select>
+      </div>
+      <div id="tickerEmpty"></div>
+
+      <div id="tickerView" class="hidden">
+
+        <!-- Parameter summary -->
+        <div class="grid grid-auto" id="paramStrip"></div>
+
+        <!-- Fan chart -->
+        <div class="card-header mt-3">
+          <h3>Forward price fan chart (regime-mixed)</h3>
+          <span class="muted small" id="fanCaption"></span>
+        </div>
+        <div class="chart-box tall"><canvas id="fanChart"></canvas></div>
+
+        <!-- Horizon results -->
+        <div class="card-header mt-3"><h3>Headline Metrics by Horizon</h3></div>
+        <div class="table-wrap">
+          <table id="horizonTable">
+            <thead><tr>
+              <th>Horizon (days)</th>
+              <th>Median Price</th>
+              <th>Mean Return</th>
+              <th>P(positive)</th>
+              <th>P(price &gt; floor)</th>
+              <th>VaR(95%)</th>
+              <th>CVaR(95%)</th>
+              <th>5–95 percentile</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <!-- Histogram -->
+        <div class="card-header mt-3">
+          <h3>Terminal price distribution at longest horizon</h3>
+          <span class="muted small" id="histCaption"></span>
+        </div>
+        <div class="chart-box short"><canvas id="histChart"></canvas></div>
+
+        <div class="alert mt-2" id="mcInsight"></div>
+      </div>
+    </div>
+
+    <p class="app-footer">Next: <a href="portfolio.html">Step 7 — Portfolio Optimizer</a>.</p>
+  </div>
+
+  <script src="../js/core.js"></script>
+  <script src="../js/stats.js"></script>
+  <script src="../js/sectors.js"></script>
+  <script src="../js/data-io.js"></script>
+  <script src="../js/montecarlo.js"></script>
+  <script src="../js/charts.js"></script>
+  <script src="../script.js"></script>
+  <script>
+    NEPSE.mountHeader("montecarlo");
+    document.getElementById("tickerSelect").innerHTML = window.tickerOptions();
+
+    function loadSettings() {
+      const s = NEPSE.loadState();
+      const sim = s.simulation;
+      document.getElementById("paths").value = sim.paths;
+      document.getElementById("horizons").value = sim.horizons.join(",");
+      document.getElementById("seed").value = sim.seed;
+      document.getElementById("useJumpDiffusion").value = String(!!sim.useJumpDiffusion);
+      const useGarch = sim.useGarch;
+      document.getElementById("volModel").value = useGarch ? "garch" : (sim.useEwma ? "ewma" : "hist");
+    }
+    function readSettings() {
+      const s = NEPSE.loadState();
+      const sim = s.simulation;
+      sim.paths = Math.max(1000, Math.min(100000, parseInt(document.getElementById("paths").value) || 10000));
+      const horizons = document.getElementById("horizons").value.split(",").map((x) => parseInt(x.trim())).filter((x) => isFinite(x) && x > 0);
+      if (horizons.length) sim.horizons = horizons;
+      sim.seed = parseInt(document.getElementById("seed").value) || 42;
+      sim.useJumpDiffusion = document.getElementById("useJumpDiffusion").value === "true";
+      const vm = document.getElementById("volModel").value;
+      sim.useGarch = vm === "garch";
+      sim.useEwma = vm !== "hist";
+      NEPSE.saveState(s);
+      return s;
+    }
+
+    document.getElementById("saveSettings").addEventListener("click", () => {
+      readSettings();
+      NEPSE.toast("Settings saved", "success");
+    });
+
+    function runForTicker(symbol, save = true) {
+      const state = readSettings();
+      const t = NEPSE.findTicker(state, symbol);
+      if (!t || !t.ohlcv?.length) {
+        NEPSE.toast(`No OHLCV for ${symbol}`, "warn");
+        return null;
+      }
+      const opts = {
+        useEwma: state.simulation.useEwma,
+        useGarch: state.simulation.useGarch,
+        ewmaLambda: state.simulation.ewmaLambda || 0.94,
+        riskFree: state.macro.riskFree || 0.045,
+      };
+      const result = MonteCarlo.runTicker(t, state.simulation, state.budgetScenarios, opts);
+      if (!result.ok) { NEPSE.toast(result.reason, "warn"); return null; }
+
+      // Store distribution at longest horizon (for portfolio module) + summary
+      if (save) {
+        const longest = Math.max(...state.simulation.horizons);
+        const dist = MonteCarlo.extractDistribution(result.simulation, longest);
+        const distAt90 = MonteCarlo.extractDistribution(result.simulation, Math.min(90, result.simulation.T));
+        state.results[symbol] = state.results[symbol] || {};
+        state.results[symbol].mc = {
+          horizons: result.horizons,
+          fan: result.fan,
+          params: {
+            mu: result.params.mu, sigma: result.params.sigma,
+            sigmaDaily: result.params.sigmaDaily,
+            jumpParams: result.params.jumpParams,
+          },
+          scenarioParams: result.scenarioParams,
+          distAtLongest: Array.from(dist).slice(0, 5000), // cap to keep storage small
+          distAt90: Array.from(distAt90).slice(0, 5000),
+          longestHorizon: longest,
+          ranAt: new Date().toISOString(),
+        };
+        NEPSE.saveState(state);
+      }
+      return result;
+    }
+
+    document.getElementById("runOne").addEventListener("click", () => {
+      const symbol = document.getElementById("tickerSelect").value;
+      if (!symbol) { NEPSE.toast("Pick a ticker first", "warn"); return; }
+      document.getElementById("runStatus").textContent = "Running…";
+      const bar = document.getElementById("progressBar");
+      bar.style.width = "10%";
+      setTimeout(() => {
+        const r = runForTicker(symbol);
+        bar.style.width = "100%";
+        document.getElementById("runStatus").textContent = r ? "Done." : "Failed.";
+        if (r) renderTicker(symbol);
+        setTimeout(() => (bar.style.width = "0%"), 600);
+      }, 30);
+    });
+
+    document.getElementById("runAll").addEventListener("click", () => {
+      const state = readSettings();
+      if (!state.tickers.length) { NEPSE.toast("Add tickers first", "warn"); return; }
+      const bar = document.getElementById("progressBar");
+      const status = document.getElementById("runStatus");
+      let i = 0;
+      function step() {
+        if (i >= state.tickers.length) {
+          bar.style.width = "100%";
+          status.textContent = `Done (${state.tickers.length} tickers).`;
+          NEPSE.toast(`Monte Carlo complete for ${state.tickers.length} tickers`, "success");
+          renderTicker(document.getElementById("tickerSelect").value || state.tickers[0].symbol);
+          setTimeout(() => (bar.style.width = "0%"), 800);
+          return;
+        }
+        const t = state.tickers[i];
+        status.textContent = `Running ${t.symbol} (${i + 1}/${state.tickers.length})…`;
+        bar.style.width = `${((i + 1) / state.tickers.length) * 100}%`;
+        runForTicker(t.symbol);
+        i++;
+        setTimeout(step, 0);
+      }
+      step();
+    });
+
+    function renderTicker(symbol) {
+      const state = NEPSE.loadState();
+      const t = NEPSE.findTicker(state, symbol);
+      if (!t) return;
+      const r = state.results?.[symbol]?.mc;
+      const view = document.getElementById("tickerView");
+      const empty = document.getElementById("tickerEmpty");
+
+      if (!t.ohlcv?.length) {
+        view.classList.add("hidden");
+        empty.innerHTML = emptyState("No OHLCV data", "Add OHLCV in Step 1.", "data.html", "Go to Setup");
+        return;
+      }
+      empty.innerHTML = "";
+      view.classList.remove("hidden");
+
+      if (!r) {
+        document.getElementById("paramStrip").innerHTML = `<div class="muted small">Click "Run For Selected Ticker" to simulate.</div>`;
+        document.querySelector("#horizonTable tbody").innerHTML = "";
+        const ctx = document.getElementById("fanChart");
+        const old = Chart.getChart(ctx); if (old) old.destroy();
+        const ctx2 = document.getElementById("histChart");
+        const old2 = Chart.getChart(ctx2); if (old2) old2.destroy();
+        document.getElementById("mcInsight").innerHTML = "";
+        return;
+      }
+
+      // Param strip
+      document.getElementById("paramStrip").innerHTML = [
+        ["LTP (S₀)", NEPSE.fmtNpr(t.ltp)],
+        ["Floor bid", NEPSE.fmtNpr(t.floorPrice)],
+        ["μ (annual)", NEPSE.fmtPct(r.params.mu, 2)],
+        ["σ (annual)", NEPSE.fmtPct(r.params.sigma, 2)],
+        ["Jump intensity λ", (r.params.jumpParams?.lambda || 0).toFixed(2) + " /yr"],
+        ["Jumps last run", r.ranAt ? new Date(r.ranAt).toLocaleTimeString() : "—"],
+      ].map(([k, v]) =>
+        `<div class="stat"><div class="label">${k}</div><div class="value" style="font-size:18px;">${NEPSE.escapeHtml(String(v))}</div></div>`
+      ).join("");
+
+      Charts.fanChart(document.getElementById("fanChart"), r.fan, { floor: t.floorPrice, title: `${symbol} — fan chart` });
+      document.getElementById("fanCaption").textContent =
+        `Bands: 5–95% (light), 25–75% (mid), median (line). Dashed = floor bid.`;
+
+      // Horizon table
+      const rows = r.horizons.map((h) => {
+        return `<tr>
+          <td>${h.horizon}</td>
+          <td>${NEPSE.fmt2(h.median)}</td>
+          <td>${NEPSE.fmtPct(h.meanReturn)}</td>
+          <td>${NEPSE.fmtPct(h.probPositive)}</td>
+          <td>${h.probAboveFloor !== undefined ? NEPSE.fmtPct(h.probAboveFloor) : "—"}</td>
+          <td>${NEPSE.fmtPct(h.var95)}</td>
+          <td>${NEPSE.fmtPct(h.cvar95)}</td>
+          <td>${NEPSE.fmt2(h.bands.p5)} – ${NEPSE.fmt2(h.bands.p95)}</td>
+        </tr>`;
+      }).join("");
+      document.querySelector("#horizonTable tbody").innerHTML = rows;
+
+      // Histogram (use distAtLongest)
+      Charts.histogramChart(document.getElementById("histChart"), r.distAtLongest, {
+        floor: t.floorPrice,
+        title: `Terminal distribution at T+${r.longestHorizon}`,
+      });
+      document.getElementById("histCaption").textContent =
+        `Bars left of floor (red) = unprofitable scenarios at the auction floor bid.`;
+
+      // Insight
+      const longestH = r.horizons[r.horizons.length - 1];
+      const probF = longestH?.probAboveFloor;
+      let insight = "";
+      if (probF !== undefined && t.floorPrice > 0) {
+        if (probF >= 0.85) insight = `<strong>${(probF*100).toFixed(0)}%</strong> probability the price is above the floor at T+${longestH.horizon}. The auction floor looks well-supported by the model.`;
+        else if (probF >= 0.65) insight = `<strong>${(probF*100).toFixed(0)}%</strong> probability above floor — model supports bidding at or near floor; verify with technical/fundamental scores.`;
+        else if (probF >= 0.45) insight = `Only <strong>${(probF*100).toFixed(0)}%</strong> probability above floor — bid below floor recommended. Re-check macro/budget assumptions.`;
+        else insight = `<strong>Caution:</strong> only ${(probF*100).toFixed(0)}% probability above floor. Either sit out, bid deep, or re-examine assumptions (μ, σ, jump intensity).`;
+      } else {
+        insight = "Set a floor bid in Step 1 to compute P(price &gt; floor).";
+      }
+      document.getElementById("mcInsight").innerHTML = insight;
+    }
+
+    document.getElementById("tickerSelect").addEventListener("change", (e) => renderTicker(e.target.value));
+
+    function init() {
+      const state = NEPSE.loadState();
+      if (!state.tickers.length) {
+        document.getElementById("tickerEmpty").innerHTML = emptyState(
+          "No tickers loaded",
+          "Add tickers in Step 1 — Data & Setup, or load the BNHC sample.",
+          "data.html", "Go to Setup"
+        );
+        document.getElementById("tickerView").classList.add("hidden");
+        return;
+      }
+      loadSettings();
+      const sym = document.getElementById("tickerSelect").value || state.tickers[0].symbol;
+      renderTicker(sym);
+    }
+    init();
+  </script>
+</body>
+</html>

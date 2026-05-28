@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Macro &amp; Budget — NEPSE Auction Analyzer</title>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+  <div id="header-slot"></div>
+
+  <div class="app">
+    <section class="page-head">
+      <h1>Step 5 — Macro &amp; Budget Overlay</h1>
+      <p>Capture Nepal's macro snapshot and define three budget scenarios
+        (bullish / neutral / bearish) with explicit probability weights.
+        These flow directly into the Monte Carlo as μ/σ regime shocks.</p>
+    </section>
+
+    <!-- Macro inputs -->
+    <div class="card">
+      <div class="card-header"><h2>Nepal Macro Snapshot</h2></div>
+      <div class="grid grid-3">
+        <div class="field">
+          <label>91-day T-Bill yield (risk-free proxy)</label>
+          <input type="number" step="0.001" id="riskFree" />
+        </div>
+        <div class="field">
+          <label>NRB Repo Rate</label>
+          <input type="number" step="0.001" id="repo" />
+        </div>
+        <div class="field">
+          <label>CRR</label>
+          <input type="number" step="0.001" id="crr" />
+        </div>
+        <div class="field">
+          <label>SLR</label>
+          <input type="number" step="0.001" id="slr" />
+        </div>
+        <div class="field">
+          <label>Headline CPI YoY</label>
+          <input type="number" step="0.001" id="cpi" />
+        </div>
+        <div class="field">
+          <label>GDP growth (est.)</label>
+          <input type="number" step="0.001" id="gdpGrowth" />
+        </div>
+        <div class="field">
+          <label>Remittance inflow YoY</label>
+          <input type="number" step="0.001" id="remittanceYoY" />
+        </div>
+        <div class="field">
+          <label>Liquidity environment</label>
+          <select id="nrnLiquidity">
+            <option value="tight">Tight</option>
+            <option value="neutral">Neutral</option>
+            <option value="loose">Loose</option>
+          </select>
+        </div>
+      </div>
+      <div class="field mt-2">
+        <label>Notes (sector tilts, regulatory pipeline, recent NRB directives, etc.)</label>
+        <textarea id="notes" rows="3"></textarea>
+      </div>
+      <div class="row mt-2">
+        <button class="btn btn-accent" id="saveMacro">Save Macro Snapshot</button>
+      </div>
+    </div>
+
+    <!-- Budget scenarios -->
+    <div class="card">
+      <div class="card-header">
+        <h2>3-Scenario Budget Overlay</h2>
+        <span class="muted small">Probabilities should sum to 1.00 (auto-renormalized in Monte Carlo).</span>
+      </div>
+
+      <div class="grid grid-3">
+
+        <div class="card" style="margin:0;border-left:4px solid var(--c-bull);">
+          <h3 style="color:var(--c-bull);">Bullish budget</h3>
+          <div class="field"><label>Probability</label><input type="number" step="0.01" min="0" max="1" data-sc="bullish" data-key="prob" /></div>
+          <div class="field"><label>μ multiplier</label><input type="number" step="0.05" data-sc="bullish" data-key="muMult" /></div>
+          <div class="field"><label>σ multiplier</label><input type="number" step="0.05" data-sc="bullish" data-key="sigmaMult" /></div>
+          <div class="field"><label>Note</label><textarea rows="2" data-sc="bullish" data-key="note" placeholder="e.g. CGT cut, tariff escalation, hydro export incentive"></textarea></div>
+        </div>
+
+        <div class="card" style="margin:0;border-left:4px solid var(--c-accent);">
+          <h3 style="color:#b3263a;">Neutral budget</h3>
+          <div class="field"><label>Probability</label><input type="number" step="0.01" min="0" max="1" data-sc="neutral" data-key="prob" /></div>
+          <div class="field"><label>μ multiplier</label><input type="number" step="0.05" data-sc="neutral" data-key="muMult" /></div>
+          <div class="field"><label>σ multiplier</label><input type="number" step="0.05" data-sc="neutral" data-key="sigmaMult" /></div>
+          <div class="field"><label>Note</label><textarea rows="2" data-sc="neutral" data-key="note" placeholder="e.g. status-quo, no major policy moves"></textarea></div>
+        </div>
+
+        <div class="card" style="margin:0;border-left:4px solid var(--c-bear);">
+          <h3 style="color:var(--c-bear);">Bearish budget</h3>
+          <div class="field"><label>Probability</label><input type="number" step="0.01" min="0" max="1" data-sc="bearish" data-key="prob" /></div>
+          <div class="field"><label>μ multiplier</label><input type="number" step="0.05" data-sc="bearish" data-key="muMult" /></div>
+          <div class="field"><label>σ multiplier</label><input type="number" step="0.05" data-sc="bearish" data-key="sigmaMult" /></div>
+          <div class="field"><label>Note</label><textarea rows="2" data-sc="bearish" data-key="note" placeholder="e.g. tighter CGT, royalty hike, liquidity squeeze"></textarea></div>
+        </div>
+
+      </div>
+      <div class="row mt-2">
+        <button class="btn btn-accent" id="saveBudget">Save Budget Scenarios</button>
+        <button class="btn btn-ghost" id="resetBudget">Reset Defaults</button>
+      </div>
+      <div class="alert mt-2" id="probAlert"></div>
+    </div>
+
+    <!-- Sector-specific budget levers -->
+    <div class="card">
+      <div class="card-header"><h2>Likely Budget Levers for <span id="sectorLabel"></span></h2></div>
+      <ul id="leverList" class="muted small" style="line-height:1.8;padding-left:18px;"></ul>
+    </div>
+
+    <p class="app-footer">Next: <a href="montecarlo.html">Step 6 — Monte Carlo</a>.</p>
+  </div>
+
+  <script src="../js/core.js"></script>
+  <script src="../js/stats.js"></script>
+  <script src="../js/sectors.js"></script>
+  <script src="../script.js"></script>
+  <script>
+    NEPSE.mountHeader("macro");
+
+    function load() {
+      const s = NEPSE.loadState();
+      ["riskFree","repo","crr","slr","cpi","gdpGrowth","remittanceYoY","notes"].forEach((k) => {
+        const el = document.getElementById(k);
+        if (el) el.value = s.macro[k] ?? "";
+      });
+      document.getElementById("nrnLiquidity").value = s.macro.nrnLiquidity || "neutral";
+
+      Object.entries(s.budgetScenarios).forEach(([sc, vals]) => {
+        Object.entries(vals).forEach(([k, v]) => {
+          const el = document.querySelector(`[data-sc="${sc}"][data-key="${k}"]`);
+          if (el) el.value = v;
+        });
+      });
+
+      const sectorDef = Sectors.get(s.sector);
+      document.getElementById("sectorLabel").textContent = sectorDef.label;
+      document.getElementById("leverList").innerHTML = (sectorDef.budgetLevers || []).map((l) =>
+        `<li>${NEPSE.escapeHtml(l)}</li>`
+      ).join("") || `<li class="muted">No specific levers defined for this sector.</li>`;
+
+      updateProbAlert();
+    }
+
+    function updateProbAlert() {
+      const probs = ["bullish","neutral","bearish"].map((sc) =>
+        parseFloat(document.querySelector(`[data-sc="${sc}"][data-key="prob"]`).value) || 0
+      );
+      const total = probs.reduce((a, b) => a + b, 0);
+      const el = document.getElementById("probAlert");
+      el.innerHTML = `<strong>Probability total:</strong> ${total.toFixed(2)} (will be auto-renormalized in Monte Carlo).`;
+      el.className = Math.abs(total - 1) < 0.01 ? "alert alert-bull" : "alert";
+    }
+
+    document.getElementById("saveMacro").addEventListener("click", () => {
+      const s = NEPSE.loadState();
+      ["riskFree","repo","crr","slr","cpi","gdpGrowth","remittanceYoY"].forEach((k) => {
+        const v = parseFloat(document.getElementById(k).value);
+        if (isFinite(v)) s.macro[k] = v;
+      });
+      s.macro.nrnLiquidity = document.getElementById("nrnLiquidity").value;
+      s.macro.notes = document.getElementById("notes").value || "";
+      s.lastUpdated = new Date().toISOString();
+      NEPSE.saveState(s);
+      NEPSE.toast("Macro snapshot saved", "success");
+    });
+
+    document.getElementById("saveBudget").addEventListener("click", () => {
+      const s = NEPSE.loadState();
+      ["bullish","neutral","bearish"].forEach((sc) => {
+        s.budgetScenarios[sc] = s.budgetScenarios[sc] || {};
+        ["prob","muMult","sigmaMult","note"].forEach((k) => {
+          const el = document.querySelector(`[data-sc="${sc}"][data-key="${k}"]`);
+          if (!el) return;
+          const v = el.value;
+          s.budgetScenarios[sc][k] = (k === "note") ? v : (isFinite(parseFloat(v)) ? parseFloat(v) : 0);
+        });
+      });
+      s.lastUpdated = new Date().toISOString();
+      NEPSE.saveState(s);
+      NEPSE.toast("Budget scenarios saved", "success");
+      updateProbAlert();
+    });
+
+    document.getElementById("resetBudget").addEventListener("click", () => {
+      const s = NEPSE.loadState();
+      s.budgetScenarios = NEPSE.defaultState().budgetScenarios;
+      NEPSE.saveState(s);
+      load();
+      NEPSE.toast("Reset budget scenarios to defaults", "info");
+    });
+
+    document.querySelectorAll('[data-sc][data-key="prob"]').forEach((el) =>
+      el.addEventListener("input", updateProbAlert)
+    );
+    load();
+  </script>
+</body>
+</html>

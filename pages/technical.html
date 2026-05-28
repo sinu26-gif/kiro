@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Technical Analysis — NEPSE Auction Analyzer</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div id="header-slot"></div>
+
+  <div class="app">
+    <section class="page-head">
+      <h1>Step 3 — Technical Analysis</h1>
+      <p>Trend (SMA stack), momentum (RSI, MACD), volatility (Bollinger),
+        strength (ADX), volume — combined into a -5 to +5 technical scorecard.
+        Results are saved to your session state and used by the Decision Report.</p>
+    </section>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Select Ticker</h2>
+        <div class="row gap-1">
+          <select id="tickerSelect" style="min-width:240px;"></select>
+          <button class="btn btn-accent btn-sm" id="runAll">Run All Tickers</button>
+        </div>
+      </div>
+      <div id="tickerEmpty"></div>
+      <div id="tickerView" class="hidden">
+
+        <!-- Score gauge + breakdown -->
+        <div class="grid grid-3 mt-2">
+          <div class="card" style="margin:0;">
+            <h3>Technical Score</h3>
+            <canvas class="score-gauge" id="scoreGauge"></canvas>
+            <div class="row between mt-1"><span class="muted small">Range: -5 to +5</span><span id="scoreLabel" class="score-chip"></span></div>
+          </div>
+          <div class="card" style="margin:0; grid-column: span 2;">
+            <h3>Component Breakdown</h3>
+            <div class="table-wrap">
+              <table id="componentTable">
+                <thead><tr><th>Component</th><th>Raw Score</th><th>Detail</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Price + overlays -->
+        <div class="card-header mt-3">
+          <h3>Price &amp; Moving Averages (SMA 20 / 50 / 200, Bollinger 20)</h3>
+          <span class="muted small" id="priceMeta"></span>
+        </div>
+        <div class="chart-box tall"><canvas id="priceChart"></canvas></div>
+
+        <!-- RSI -->
+        <div class="card-header mt-3"><h3>RSI(14)</h3></div>
+        <div class="chart-box short"><canvas id="rsiChart"></canvas></div>
+
+        <!-- MACD -->
+        <div class="card-header mt-3"><h3>MACD(12, 26, 9)</h3></div>
+        <div class="chart-box short"><canvas id="macdChart"></canvas></div>
+
+        <!-- Volume -->
+        <div class="card-header mt-3"><h3>Volume</h3></div>
+        <div class="chart-box short"><canvas id="volChart"></canvas></div>
+
+        <!-- KPI strip -->
+        <div class="grid grid-auto mt-3" id="kpiStrip"></div>
+      </div>
+    </div>
+
+    <p class="app-footer">Next: <a href="fundamental.html">Step 4 — Fundamental Analysis</a>.</p>
+  </div>
+
+  <script src="../js/core.js"></script>
+  <script src="../js/stats.js"></script>
+  <script src="../js/sectors.js"></script>
+  <script src="../js/data-io.js"></script>
+  <script src="../js/technical.js"></script>
+  <script src="../js/charts.js"></script>
+  <script src="../script.js"></script>
+  <script>
+    NEPSE.mountHeader("technical");
+
+    document.getElementById("tickerSelect").innerHTML = window.tickerOptions();
+
+    function classifyChip(score) {
+      if (score >= 1.5) return "bull";
+      if (score <= -1.5) return "bear";
+      if (Math.abs(score) >= 0.5) return "warn";
+      return "";
+    }
+
+    function renderOne(symbol) {
+      const state = NEPSE.loadState();
+      const t = NEPSE.findTicker(state, symbol);
+      if (!t) return;
+
+      const sc = Technical.scorecard(t.ohlcv);
+      // store result
+      state.results = state.results || {};
+      state.results[symbol] = state.results[symbol] || {};
+      state.results[symbol].technical = { score: sc.score, label: sc.label, components: sc.components };
+      NEPSE.saveState(state);
+
+      // gauge + label
+      Charts.scoreGauge(document.getElementById("scoreGauge"), sc.score, sc.label);
+      const chip = document.getElementById("scoreLabel");
+      chip.className = "score-chip " + classifyChip(sc.score);
+      chip.innerHTML = `<span class="num">${sc.score.toFixed(2)}</span><span class="label">${NEPSE.escapeHtml(sc.label)}</span>`;
+
+      // component table
+      document.querySelector("#componentTable tbody").innerHTML = sc.components.map((c) =>
+        `<tr><td>${NEPSE.escapeHtml(c.name)}</td><td>${c.raw.toFixed(2)}</td><td>${NEPSE.escapeHtml(c.detail)}</td></tr>`
+      ).join("");
+
+      // charts
+      const closes = t.ohlcv.map((b) => b.close);
+      const overlays = {
+        sma20: Technical.sma(closes, 20),
+        sma50: Technical.sma(closes, 50),
+        sma200: Technical.sma(closes, 200),
+        bb: Technical.bollinger(closes, 20, 2),
+      };
+      Charts.priceChart(document.getElementById("priceChart"), t.ohlcv, overlays);
+      Charts.rsiChart(document.getElementById("rsiChart"), t.ohlcv, Technical.rsi(closes));
+      Charts.macdChart(document.getElementById("macdChart"), t.ohlcv, Technical.macd(closes));
+      Charts.volumeChart(document.getElementById("volChart"), t.ohlcv);
+
+      // KPI strip
+      const ftw = Technical.fiftyTwoWeek(closes);
+      const lastClose = closes[closes.length - 1];
+      document.getElementById("priceMeta").textContent =
+        `${t.ohlcv[0].date} → ${t.ohlcv[t.ohlcv.length - 1].date} | ${t.ohlcv.length} bars`;
+      document.getElementById("kpiStrip").innerHTML = [
+        ["LTP", NEPSE.fmtNpr(lastClose)],
+        ["52w high", NEPSE.fmtNpr(ftw?.high)],
+        ["52w low", NEPSE.fmtNpr(ftw?.low)],
+        ["Position in 52w range", NEPSE.fmtPct(ftw?.pctOfRange)],
+        ["RSI(14)", (sc.details.rsi ?? 0).toFixed(1)],
+        ["ADX(14)", (sc.details.adx ?? 0).toFixed(1)],
+        ["Volume z-score (last 20d)", (sc.details.volZ ?? 0).toFixed(2)],
+      ].map(([k, v]) =>
+        `<div class="stat"><div class="label">${k}</div><div class="value" style="font-size:18px;">${NEPSE.escapeHtml(String(v))}</div></div>`
+      ).join("");
+    }
+
+    function renderAll() {
+      const state = NEPSE.loadState();
+      if (!state.tickers.length) {
+        document.getElementById("tickerEmpty").innerHTML = emptyState(
+          "No tickers loaded",
+          "Add tickers in Step 1 — Data & Setup, or load the BNHC sample.",
+          "data.html", "Go to Setup"
+        );
+        document.getElementById("tickerView").classList.add("hidden");
+        return;
+      }
+      document.getElementById("tickerEmpty").innerHTML = "";
+      document.getElementById("tickerView").classList.remove("hidden");
+      renderOne(document.getElementById("tickerSelect").value || state.tickers[0].symbol);
+    }
+
+    document.getElementById("tickerSelect").addEventListener("change", renderAll);
+    document.getElementById("runAll").addEventListener("click", () => {
+      const state = NEPSE.loadState();
+      state.results = state.results || {};
+      state.tickers.forEach((t) => {
+        const sc = Technical.scorecard(t.ohlcv);
+        state.results[t.symbol] = state.results[t.symbol] || {};
+        state.results[t.symbol].technical = { score: sc.score, label: sc.label, components: sc.components };
+      });
+      NEPSE.saveState(state);
+      NEPSE.toast(`Computed technical scores for ${state.tickers.length} tickers`, "success");
+      renderAll();
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>

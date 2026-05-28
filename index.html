@@ -1,41 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To-Do List App</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEPSE Auction Analyzer — Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <div class="container">
-        <div class="todo-app">
-            <h1>My To-Do List</h1>
-            
-            <div class="input-section">
-                <input 
-                    type="text" 
-                    id="todoInput" 
-                    placeholder="Add a new task..." 
-                    class="todo-input"
-                >
-                <button id="addBtn" class="add-btn">Add Task</button>
-            </div>
+  <div id="header-slot"></div>
 
-            <div class="filter-section">
-                <button class="filter-btn active" data-filter="all">All</button>
-                <button class="filter-btn" data-filter="active">Active</button>
-                <button class="filter-btn" data-filter="completed">Completed</button>
-            </div>
+  <div class="app">
+    <section class="page-head">
+      <h1>NEPSE Auction-Share Analyzer</h1>
+      <p>
+        A complete browser-based research &amp; quantitative system for
+        NEPSE auction shares — from data ingest to event-window analysis,
+        technicals, fundamentals, macro &amp; budget overlays, Monte Carlo
+        with Jump-Diffusion, mean-CVaR portfolio optimization, and a printable
+        decision-grade report. Sector-agnostic: works for hydropower today,
+        banking tomorrow, microfinance next month.
+      </p>
+    </section>
 
-            <ul id="todoList" class="todo-list"></ul>
-
-            <div class="stats">
-                <span id="taskCount">0 tasks</span>
-                <button id="clearBtn" class="clear-btn">Clear Completed</button>
-            </div>
+    <!-- Snapshot strip -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Session Snapshot</h2>
+        <div class="row gap-1">
+          <button class="btn btn-accent btn-sm" id="loadSampleBtn">Load BNHC + Hydro Sample</button>
+          <button class="btn btn-ghost btn-sm" id="exportBtn">Export</button>
+          <label class="btn btn-ghost btn-sm" for="importFile">Import</label>
+          <input type="file" id="importFile" accept="application/json" class="hidden" />
+          <button class="btn btn-bear btn-sm" id="resetBtn">Reset</button>
         </div>
+      </div>
+      <div class="grid grid-auto" id="snapshot"></div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Module navigation -->
+    <h2 style="color:white;margin:8px 4px 12px;font-size:18px;">Workflow</h2>
+    <div class="module-grid">
+
+      <a class="module-tile" href="pages/data.html">
+        <div class="step">Step 1</div>
+        <h3>Data &amp; Auction Setup</h3>
+        <p>Define the sector, auction dates, tickers, floor bid prices,
+          fundamentals &amp; sector KPIs. Upload CSV OHLCV or use the
+          synthetic generator.</p>
+        <span class="arrow">Open module →</span>
+      </a>
+
+      <a class="module-tile" href="pages/timeline.html">
+        <div class="step">Step 2</div>
+        <h3>Auction Timeline</h3>
+        <p>Event-window study: returns and volume z-scores around auction
+          open and close, with comparable historical auctions.</p>
+        <span class="arrow">Open module →</span>
+      </a>
+
+      <a class="module-tile green" href="pages/technical.html">
+        <div class="step">Step 3</div>
+        <h3>Technical Analysis</h3>
+        <p>SMA / EMA stack, RSI, MACD, Bollinger Bands, ADX, volume
+          profile and a -5 to +5 technical scorecard per ticker.</p>
+        <span class="arrow">Open module →</span>
+      </a>
+
+      <a class="module-tile" href="pages/fundamental.html">
+        <div class="step">Step 4</div>
+        <h3>Fundamental Analysis</h3>
+        <p>Common ratios vs sector medians, sector-specific KPIs,
+          DCF + DDM intrinsic value (bear / base / bull) and a
+          fundamental scorecard.</p>
+        <span class="arrow">Open module →</span>
+      </a>
+
+      <a class="module-tile warm" href="pages/macro.html">
+        <div class="step">Step 5</div>
+        <h3>Macro &amp; Budget</h3>
+        <p>Nepal macro inputs (NRB rates, CPI, BoP) and a 3-scenario
+          budget overlay (bullish / neutral / bearish) that feeds into
+          Monte Carlo as μ/σ shocks.</p>
+        <span class="arrow">Open module →</span>
+      </a>
+
+      <a class="module-tile red" href="pages/montecarlo.html">
+        <div class="step">Step 6</div>
+        <h3>Monte Carlo</h3>
+        <p>GBM + Merton Jump-Diffusion with EWMA / GARCH(1,1) volatility,
+          regime-switching across the 3 budget scenarios. Fan chart,
+          terminal histogram, P(profit &gt; floor bid), VaR &amp; CVaR.</p>
+        <span class="arrow">Open module →</span>
+      </a>
+
+      <a class="module-tile" href="pages/portfolio.html">
+        <div class="step">Step 7</div>
+        <h3>Portfolio Optimizer</h3>
+        <p>Allocate your bid capital across the auction tickers using
+          equal-weight, risk-parity, or mean-CVaR with random-search.
+          Outputs NPR allocation and bid quantities.</p>
+        <span class="arrow">Open module →</span>
+      </a>
+
+      <a class="module-tile" href="pages/report.html">
+        <div class="step">Step 8</div>
+        <h3>Decision Report</h3>
+        <p>One-page synthesis: per-ticker decision card, recommended
+          bids, allocation, conviction tags and a risk register.
+          Print-friendly.</p>
+        <span class="arrow">Open module →</span>
+      </a>
+
+      <a class="module-tile" href="bnhc-calculator.html">
+        <div class="step">Companion</div>
+        <h3>Historical Bid Calculator</h3>
+        <p>The original BNHC calculator (15 hydro auctions, 2024–25).
+          Use it as a quick sanity check or for rapid bid sizing on
+          auction morning.</p>
+        <span class="arrow">Open calculator →</span>
+      </a>
+
+    </div>
+
+    <!-- Master prompt callout -->
+    <div class="card" style="margin-top:18px;">
+      <div class="card-header">
+        <h2>Master Prompt for Reuse Across Sectors</h2>
+        <span class="pill">prompts/master-prompt.md</span>
+      </div>
+      <p class="muted small">
+        The system ships with a parameterized master prompt you can paste
+        into any LLM with 14 placeholder inputs (sector, ticker list, dates,
+        budget, capital, etc.). Change Section 2 to retarget any auction
+        in any NEPSE sector — methodology and deliverables stay identical.
+      </p>
+      <div class="row mt-2">
+        <a class="btn btn-ghost btn-sm" href="prompts/master-prompt.md">View master prompt</a>
+        <a class="btn btn-ghost btn-sm" href="BNHC_Auction_Analysis.md">View BNHC analysis</a>
+      </div>
+    </div>
+
+    <p class="app-footer">
+      Educational analysis only — not financial advice. Verify all numbers
+      against official sources (NEPSE / sharesansar.com / merolagani.com)
+      before submitting any bid. This system runs entirely in your browser;
+      your data never leaves your device.
+    </p>
+  </div>
+
+  <!-- Scripts: load core libs first, then page logic -->
+  <script src="js/core.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/sectors.js"></script>
+  <script src="js/data-io.js"></script>
+  <script src="script.js"></script>
+  <script>
+    NEPSE.mountHeader("index");
+
+    /* --- snapshot --- */
+    function renderSnapshot() {
+      const s = NEPSE.loadState();
+      const sector = Sectors.get(s.sector).label;
+      const tickers = s.tickers.length;
+      const open = s.auction.openDate || "—";
+      const close = s.auction.closeDate || "—";
+      const budget = s.auction.budgetDate || "—";
+      const capital = NEPSE.fmt0(s.portfolio.capital);
+      const updated = s.lastUpdated ? new Date(s.lastUpdated).toLocaleString() : "—";
+      document.getElementById("snapshot").innerHTML = [
+        ["Sector", sector],
+        ["Auction tickers", tickers],
+        ["Auction window", `${open} → ${close}`],
+        ["Budget date", budget],
+        ["Bid capital", `NPR ${capital}`],
+        ["Last updated", updated],
+      ].map(([k, v]) =>
+        `<div class="stat"><div class="label">${k}</div><div class="value" style="font-size:16px;">${NEPSE.escapeHtml(String(v))}</div></div>`
+      ).join("");
+    }
+    renderSnapshot();
+
+    document.getElementById("loadSampleBtn").addEventListener("click", () => {
+      DataIO.loadHydropowerSampleIntoState();
+      NEPSE.toast("Loaded BNHC + 4 hydropower comparables (3yr synthetic OHLCV)", "success");
+      renderSnapshot();
+    });
+
+    document.getElementById("exportBtn").addEventListener("click", () => NEPSE.exportState());
+    document.getElementById("resetBtn").addEventListener("click", () => NEPSE.resetState());
+    document.getElementById("importFile").addEventListener("change", (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      NEPSE.importState(f, (err) => {
+        if (err) NEPSE.toast("Failed to import file", "error");
+        else { NEPSE.toast("Imported state", "success"); renderSnapshot(); }
+      });
+    });
+  </script>
 </body>
 </html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Decision Report — NEPSE Auction Analyzer</title>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+  <div id="header-slot"></div>
+
+  <div class="app">
+    <section class="page-head">
+      <h1>Step 8 — Decision Report</h1>
+      <p>Synthesis of every prior step. Per-ticker decision card with
+        recommended bid, conviction tag, and key risks. Print-ready.</p>
+    </section>
+
+    <div class="card no-print">
+      <div class="row between">
+        <div class="row gap-1">
+          <button class="btn btn-accent" onclick="window.print()">Print / Save as PDF</button>
+          <button class="btn btn-ghost" id="refresh">Refresh from latest results</button>
+        </div>
+        <span class="muted small" id="reportMeta"></span>
+      </div>
+    </div>
+
+    <!-- Executive summary -->
+    <div class="card">
+      <div class="card-header"><h2>Executive Summary</h2></div>
+      <div class="grid grid-auto" id="execStrip"></div>
+      <div class="alert alert-info mt-2" id="execNarrative"></div>
+    </div>
+
+    <!-- Per-ticker decision cards -->
+    <div id="cards"></div>
+
+    <!-- Portfolio summary -->
+    <div class="card">
+      <div class="card-header"><h2>Portfolio Allocation</h2></div>
+      <div id="portfolioSummary" class="muted">Run the Portfolio Optimizer (Step 7) to populate this section.</div>
+    </div>
+
+    <!-- Risk register -->
+    <div class="card">
+      <div class="card-header"><h2>Risk Register</h2></div>
+      <ul style="line-height:1.8;padding-left:18px;">
+        <li><strong>LTP volatility risk</strong> — actual LTP on auction-close morning may differ; recompute bids.</li>
+        <li><strong>Oversubscription risk</strong> — even a winning bid may receive only a fraction of target qty (proportional allotment).</li>
+        <li><strong>Outlier discount risk</strong> — historic cohort had auctions that cleared >25% below LTP. Build buffer.</li>
+        <li><strong>Listing-day price drop</strong> — the 30–60 day post-allotment window can erode profit margin.</li>
+        <li><strong>Capital lock-up</strong> — bid amount is held until allotment+listing or refund (~7–15 business days).</li>
+        <li><strong>Macro / budget shock</strong> — adverse policy moves on budget day can trigger sector-wide repricing.</li>
+        <li><strong>Liquidity / circuit risk</strong> — small hydropower stocks can hit lower circuit, blocking exit.</li>
+        <li><strong>Model risk</strong> — Monte Carlo assumes log-normal returns with optional jumps; tail risk may be underestimated.</li>
+        <li><strong>Data quality risk</strong> — fundamentals/KPIs entered by hand; verify against company quarterly filings.</li>
+        <li><strong>Bidding logistics</strong> — confirm DEMAT, broker auction bidding access and clear funds before auction open day.</li>
+      </ul>
+    </div>
+
+    <p class="app-footer">
+      Educational analysis only — not financial advice. Verify all numbers
+      against official sources (NEPSE / sharesansar.com / merolagani.com)
+      before submitting any bid. Generated entirely in the browser.
+    </p>
+  </div>
+
+  <script src="../js/core.js"></script>
+  <script src="../js/stats.js"></script>
+  <script src="../js/sectors.js"></script>
+  <script src="../js/data-io.js"></script>
+  <script src="../js/auction.js"></script>
+  <script src="../script.js"></script>
+  <script>
+    NEPSE.mountHeader("report");
+
+    function classifyChip(score) {
+      if (score >= 1.5) return "bull";
+      if (score <= -1.5) return "bear";
+      if (Math.abs(score) >= 0.5) return "warn";
+      return "";
+    }
+    function chip(score, label) {
+      const cls = classifyChip(score);
+      return `<span class="score-chip ${cls}"><span class="num">${score.toFixed(2)}</span><span class="label">${NEPSE.escapeHtml(label || "")}</span></span>`;
+    }
+
+    function render() {
+      const state = NEPSE.loadState();
+      const sector = Sectors.get(state.sector);
+      const tickers = state.tickers;
+      document.getElementById("reportMeta").textContent =
+        `${sector.label} | ${tickers.length} tickers | last updated ${state.lastUpdated ? new Date(state.lastUpdated).toLocaleString() : "—"}`;
+
+      // Exec strip
+      const techScores = tickers.map((t) => state.results?.[t.symbol]?.technical?.score).filter((x) => isFinite(x));
+      const fundScores = tickers.map((t) => state.results?.[t.symbol]?.fundamental?.score).filter((x) => isFinite(x));
+      const probs = tickers
+        .map((t) => state.results?.[t.symbol]?.mc?.horizons?.[1]?.probAboveFloor)
+        .filter((x) => isFinite(x));
+      document.getElementById("execStrip").innerHTML = [
+        ["Sector", sector.label],
+        ["Tickers", tickers.length],
+        ["Auction window", `${state.auction.openDate || "—"} → ${state.auction.closeDate || "—"}`],
+        ["Mean technical score", techScores.length ? Stats.mean(techScores).toFixed(2) : "—"],
+        ["Mean fundamental score", fundScores.length ? Stats.mean(fundScores).toFixed(2) : "—"],
+        ["Mean P(>floor) @ T+90", probs.length ? NEPSE.fmtPct(Stats.mean(probs)) : "—"],
+        ["Bid capital", `NPR ${NEPSE.fmt0(state.portfolio.capital)}`],
+      ].map(([k, v]) =>
+        `<div class="stat"><div class="label">${k}</div><div class="value" style="font-size:17px;">${NEPSE.escapeHtml(String(v))}</div></div>`
+      ).join("");
+
+      const tilt = (Stats.mean(techScores) || 0) + (Stats.mean(fundScores) || 0);
+      let narrative = "";
+      if (!tickers.length) {
+        narrative = "No tickers loaded. Start at <a href='data.html'>Step 1 — Data &amp; Setup</a>.";
+      } else if (!techScores.length || !fundScores.length || !probs.length) {
+        narrative = "Some analysis steps haven't been run. Visit Steps 3, 4 and 6 to compute scores and Monte Carlo.";
+      } else if (tilt > 4) {
+        narrative = "<strong>Constructive setup.</strong> Average technical + fundamental scores are positive and Monte Carlo supports the floor bid. Lean toward the <em>Conservative</em> bid tier to maximize allotment odds.";
+      } else if (tilt > 0) {
+        narrative = "<strong>Mixed but slightly positive setup.</strong> The <em>Balanced</em> bid tier is a reasonable default — verify each ticker's fan chart and adjust per-name.";
+      } else {
+        narrative = "<strong>Cautious.</strong> Average scores are weak. Bid <em>Aggressively</em> below the empirical median discount, or sit specific names out.";
+      }
+      document.getElementById("execNarrative").innerHTML = narrative;
+
+      // Per-ticker decision cards
+      const history = DataIO.getHydroComparables();
+      const cardsHost = document.getElementById("cards");
+      if (!tickers.length) { cardsHost.innerHTML = ""; return; }
+
+      cardsHost.innerHTML = tickers.map((t) => {
+        const r = state.results?.[t.symbol] || {};
+        const tech = r.technical;
+        const fund = r.fundamental;
+        const mc = r.mc;
+        const techScore = tech?.score ?? 0;
+        const fundScore = fund?.score ?? 0;
+        const rec = Auction.recommendation(t, history, techScore, fundScore);
+        const probF = mc?.horizons?.find((h) => h.horizon >= 90)?.probAboveFloor;
+
+        return `<div class="card">
+          <div class="card-header">
+            <h2>${NEPSE.escapeHtml(t.symbol)} — ${NEPSE.escapeHtml(t.name || "")}</h2>
+            <div class="row gap-1">
+              ${tech ? chip(techScore, "Tech") : ""}
+              ${fund ? chip(fundScore, "Fund") : ""}
+              <span class="pill">${rec.conviction} conviction</span>
+            </div>
+          </div>
+          <div class="grid grid-3">
+            <div class="stat"><div class="label">LTP</div><div class="value">${NEPSE.fmtNpr(t.ltp)}</div></div>
+            <div class="stat"><div class="label">Floor bid</div><div class="value">${NEPSE.fmtNpr(t.floorPrice)}</div></div>
+            <div class="stat"><div class="label">Target qty</div><div class="value">${NEPSE.fmt0(t.qty)}</div></div>
+            <div class="stat"><div class="label">Recommended bid</div><div class="value">${NEPSE.fmtNpr(rec.recommended.bid)}</div><div class="sub">${(rec.recommended.discount*100).toFixed(2)}% below LTP</div></div>
+            <div class="stat"><div class="label">Empirical allotment odds</div><div class="value">${(rec.recommended.prob*100).toFixed(0)}%</div></div>
+            <div class="stat ${probF !== undefined && probF >= 0.7 ? "bull" : probF !== undefined && probF < 0.5 ? "bear" : ""}">
+              <div class="label">P(price &gt; floor) @ T+90</div>
+              <div class="value">${probF !== undefined ? NEPSE.fmtPct(probF) : "—"}</div>
+            </div>
+          </div>
+          <div class="decision mt-2">
+            <div class="ticker">${NEPSE.escapeHtml(t.symbol)} decision</div>
+            <div class="summary">
+              ${tech ? `Technical: <strong>${NEPSE.escapeHtml(tech.label)}</strong>. ` : ""}
+              ${fund ? `Fundamental: <strong>${NEPSE.escapeHtml(fund.label)}</strong>. ` : ""}
+              Recommended bid <strong>${NEPSE.fmtNpr(rec.recommended.bid)}</strong>
+              (${(rec.recommended.discount*100).toFixed(2)}% off LTP) for
+              <strong>${NEPSE.fmt0(t.qty || 0)}</strong> shares
+              — total ${NEPSE.fmtNpr((t.qty || 0) * rec.recommended.bid)}.
+              ${probF !== undefined ? `Monte Carlo gives ${(probF*100).toFixed(0)}% probability of being above floor at T+90.` : ""}
+            </div>
+          </div>
+        </div>`;
+      }).join("");
+
+      // Portfolio summary
+      const port = state.results?._portfolio;
+      if (port) {
+        document.getElementById("portfolioSummary").innerHTML = `
+          <div class="grid grid-auto">
+            ${[
+              ["Method", port.method],
+              ["Total capital", `NPR ${NEPSE.fmt0(port.capital)}`],
+              ["Mean return", NEPSE.fmtPct(port.metrics.mean)],
+              ["VaR(95%)", NEPSE.fmtPct(port.metrics.var95)],
+              ["CVaR(95%)", NEPSE.fmtPct(port.metrics.cvar95)],
+              ["P(positive)", NEPSE.fmtPct(port.metrics.probPositive)],
+            ].map(([k, v]) =>
+              `<div class="stat"><div class="label">${k}</div><div class="value" style="font-size:18px;">${NEPSE.escapeHtml(String(v))}</div></div>`
+            ).join("")}
+          </div>
+          <div class="table-wrap mt-2">
+            <table>
+              <thead><tr><th>Ticker</th><th>Weight</th><th>NPR</th><th>Bid</th><th>Qty</th><th>Cost</th></tr></thead>
+              <tbody>${port.alloc.map((a) =>
+                `<tr><td>${NEPSE.escapeHtml(a.symbol)}</td><td>${(a.weight*100).toFixed(2)}%</td><td>${NEPSE.fmtNpr(a.npr)}</td><td>${NEPSE.fmtNpr(a.bid)}</td><td>${NEPSE.fmt0(a.qty)}</td><td>${NEPSE.fmtNpr(a.cost)}</td></tr>`
+              ).join("")}</tbody>
+            </table>
+          </div>
+        `;
+      }
+    }
+
+    document.getElementById("refresh").addEventListener("click", render);
+    render();
+  </script>
+</body>
+</html>

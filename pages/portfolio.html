@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio Optimizer — NEPSE Auction Analyzer</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div id="header-slot"></div>
+
+  <div class="app">
+    <section class="page-head">
+      <h1>Step 7 — Portfolio Optimizer</h1>
+      <p>Allocate your bid capital across the auction tickers using
+        equal-weight, risk-parity, or random-search mean-CVaR optimization.
+        Uses the per-ticker Monte Carlo distributions (run Step 6 first).</p>
+    </section>
+
+    <div class="card">
+      <div class="card-header"><h2>Settings</h2></div>
+      <div class="grid grid-4">
+        <div class="field"><label>Total Capital (NPR)</label><input type="number" id="capital" min="0" step="10000" /></div>
+        <div class="field">
+          <label>Method</label>
+          <select id="method">
+            <option value="mean-cvar">Mean-CVaR (random search)</option>
+            <option value="risk-parity">Risk Parity (1/σ)</option>
+            <option value="equal">Equal-weight</option>
+          </select>
+        </div>
+        <div class="field"><label>CVaR α</label><input type="number" id="alpha" min="0.5" max="0.99" step="0.01" value="0.95" /></div>
+        <div class="field"><label>CVaR penalty λ</label><input type="number" id="lambda" min="0" max="10" step="0.1" value="1.0" /></div>
+        <div class="field">
+          <label>Horizon for optimization</label>
+          <select id="horizonChoice">
+            <option value="longest">Longest MC horizon</option>
+            <option value="t90">≈ T+90</option>
+          </select>
+        </div>
+        <div class="field"><label>Trials (random search)</label><input type="number" id="trials" min="500" max="20000" step="500" value="4000" /></div>
+      </div>
+      <div class="row mt-2">
+        <button class="btn btn-accent" id="run">Optimize</button>
+        <button class="btn btn-ghost" id="saveSettings">Save Settings</button>
+        <span class="muted small" id="status"></span>
+      </div>
+    </div>
+
+    <div id="empty"></div>
+    <div id="resultView" class="hidden">
+
+      <!-- Allocation summary -->
+      <div class="card">
+        <div class="card-header"><h2>Recommended Allocation</h2></div>
+        <div class="grid grid-3">
+          <div class="card" style="margin:0;">
+            <h3>Allocation Donut</h3>
+            <div class="chart-box"><canvas id="donut"></canvas></div>
+          </div>
+          <div class="card" style="margin:0; grid-column: span 2;">
+            <h3>Allocation Detail</h3>
+            <div class="table-wrap">
+              <table id="allocTable">
+                <thead><tr><th>Ticker</th><th>Weight</th><th>NPR</th><th>Bid</th><th>Qty</th><th>Cost</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Portfolio metrics -->
+      <div class="card">
+        <div class="card-header"><h2>Portfolio Metrics (model-implied)</h2></div>
+        <div class="grid grid-auto" id="metrics"></div>
+        <div class="alert mt-2" id="portInsight"></div>
+      </div>
+    </div>
+
+    <p class="app-footer">Next: <a href="report.html">Step 8 — Decision Report</a>.</p>
+  </div>
+
+  <script src="../js/core.js"></script>
+  <script src="../js/stats.js"></script>
+  <script src="../js/sectors.js"></script>
+  <script src="../js/portfolio.js"></script>
+  <script src="../js/charts.js"></script>
+  <script src="../script.js"></script>
+  <script>
+    NEPSE.mountHeader("portfolio");
+
+    function loadSettings() {
+      const s = NEPSE.loadState();
+      document.getElementById("capital").value = s.portfolio.capital;
+      document.getElementById("method").value = s.portfolio.method;
+      document.getElementById("alpha").value = s.portfolio.cvarAlpha;
+    }
+    function saveSettings() {
+      const s = NEPSE.loadState();
+      s.portfolio.capital = parseFloat(document.getElementById("capital").value) || 1000000;
+      s.portfolio.method = document.getElementById("method").value;
+      s.portfolio.cvarAlpha = parseFloat(document.getElementById("alpha").value) || 0.95;
+      NEPSE.saveState(s);
+      return s;
+    }
+
+    function tickersWithMc(state, horizonChoice) {
+      const out = [];
+      for (const t of state.tickers) {
+        const r = state.results?.[t.symbol]?.mc;
+        if (!r) continue;
+        const dist = horizonChoice === "t90" ? r.distAt90 : r.distAtLongest;
+        if (!dist || !dist.length) continue;
+        out.push({ ...t, mcDistAtHorizon: dist });
+      }
+      return out;
+    }
+
+    function run() {
+      const state = saveSettings();
+      const horizonChoice = document.getElementById("horizonChoice").value;
+      const ticks = tickersWithMc(state, horizonChoice);
+
+      if (ticks.length < 2) {
+        document.getElementById("empty").innerHTML = emptyState(
+          "Need ≥ 2 tickers with Monte Carlo run",
+          "Run Monte Carlo (Step 6) for at least two tickers first.",
+          "montecarlo.html", "Go to Monte Carlo"
+        );
+        document.getElementById("resultView").classList.add("hidden");
+        return;
+      }
+      document.getElementById("empty").innerHTML = "";
+      document.getElementById("resultView").classList.remove("hidden");
+
+      let weights;
+      const method = state.portfolio.method;
+      const alpha = state.portfolio.cvarAlpha;
+      const lambda = parseFloat(document.getElementById("lambda").value) || 1.0;
+      const trials = parseInt(document.getElementById("trials").value) || 4000;
+      const status = document.getElementById("status");
+
+      if (method === "equal") {
+        weights = Portfolio.equalWeight(ticks.length);
+        status.textContent = "Equal-weight applied.";
+      } else if (method === "risk-parity") {
+        weights = Portfolio.riskParity(ticks);
+        status.textContent = "Risk-parity (1/σ) applied.";
+      } else {
+        const res = Portfolio.optimizeMeanCVaR(ticks, { trials, lambda, alpha, seed: 42 });
+        if (!res.ok) { NEPSE.toast(res.reason, "warn"); return; }
+        weights = res.weights;
+        status.textContent = `Random-search mean-CVaR (${trials} trials, λ=${lambda}, α=${alpha}).`;
+      }
+
+      const alloc = Portfolio.allocate(ticks, weights, state.portfolio.capital);
+      const metrics = Portfolio.portfolioMetrics(ticks, weights);
+
+      // Donut
+      Charts.allocationDonut(document.getElementById("donut"),
+        alloc.filter((a) => a.weight > 0.001),
+        { title: `${method} — total NPR ${NEPSE.fmt0(state.portfolio.capital)}` }
+      );
+
+      // Allocation table
+      document.querySelector("#allocTable tbody").innerHTML = alloc.map((a) =>
+        `<tr>
+          <td>${NEPSE.escapeHtml(a.symbol)}</td>
+          <td>${(a.weight * 100).toFixed(2)}%</td>
+          <td>${NEPSE.fmtNpr(a.npr)}</td>
+          <td>${NEPSE.fmtNpr(a.bid)}</td>
+          <td>${NEPSE.fmt0(a.qty)}</td>
+          <td>${NEPSE.fmtNpr(a.cost)}</td>
+        </tr>`
+      ).join("");
+
+      // Metrics
+      document.getElementById("metrics").innerHTML = [
+        ["Mean return", NEPSE.fmtPct(metrics.mean)],
+        ["Median return", NEPSE.fmtPct(metrics.median)],
+        ["Std dev (return)", NEPSE.fmtPct(metrics.std)],
+        ["VaR(95%)", NEPSE.fmtPct(metrics.var95)],
+        ["CVaR(95%)", NEPSE.fmtPct(metrics.cvar95)],
+        ["P(positive)", NEPSE.fmtPct(metrics.probPositive)],
+      ].map(([k, v]) =>
+        `<div class="stat"><div class="label">${k}</div><div class="value" style="font-size:18px;">${NEPSE.escapeHtml(String(v))}</div></div>`
+      ).join("");
+
+      // Persist
+      state.results = state.results || {};
+      state.results._portfolio = {
+        method, weights, alloc, metrics, horizonChoice,
+        capital: state.portfolio.capital, ranAt: new Date().toISOString(),
+      };
+      NEPSE.saveState(state);
+
+      const insight =
+        metrics.cvar95 > 0.30
+          ? "<strong>High tail risk.</strong> CVaR(95%) > 30%. Consider lowering allocation, deeper bid discounts, or trimming the weakest-fundamental ticker."
+          : metrics.mean > 0.10
+            ? "<strong>Strong expected return.</strong> Allocation looks attractive given assumptions; verify concentration is acceptable."
+            : "Balanced profile — review per-ticker fan charts and the Decision Report.";
+      document.getElementById("portInsight").innerHTML = insight;
+    }
+
+    document.getElementById("run").addEventListener("click", run);
+    document.getElementById("saveSettings").addEventListener("click", () => {
+      saveSettings();
+      NEPSE.toast("Settings saved", "success");
+    });
+
+    loadSettings();
+    // Auto-run if MC already exists
+    const state = NEPSE.loadState();
+    const anyMc = state.tickers.some((t) => state.results?.[t.symbol]?.mc);
+    if (anyMc) run(); else {
+      document.getElementById("empty").innerHTML = emptyState(
+        "Run Monte Carlo first",
+        "Step 6 produces the per-ticker distributions used for portfolio optimization.",
+        "montecarlo.html", "Go to Monte Carlo"
+      );
+    }
+  </script>
+</body>
+</html>
