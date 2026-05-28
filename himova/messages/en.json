@@ -1,0 +1,37 @@
+{
+  "common": {
+    "appName": "Himova",
+    "tagline": "Wholesale, simplified.",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "search": "Search",
+    "actions": "Actions",
+    "language": "Language",
+    "english": "English",
+    "nepali": "नेपाली"
+  },
+  "landing": {
+    "heroTitle": "Wholesale ordering and a free POS, built for Nepal.",
+    "heroSubtitle": "Order shoes and clothing in sets, track every sale, and grow with your shop on a single platform.",
+    "shopkeeperLogin": "Shopkeeper login",
+    "adminLogin": "Admin login",
+    "viewLeaderboard": "View leaderboard",
+    "featureOrderTitle": "Order in sets",
+    "featureOrderBody": "Browse the catalog, place orders, and track delivery from your phone.",
+    "featurePosTitle": "Free POS",
+    "featurePosBody": "Sell single pairs to your customers with built-in payments and receipts.",
+    "featureLeaderboardTitle": "Leaderboard",
+    "featureLeaderboardBody": "Compete with other shopkeepers and earn rewards every month."
+  },
+  "auth": {
+    "phoneLabel": "Phone number",
+    "passwordLabel": "Password",
+    "emailLabel": "Email",
+    "loginButton": "Log in",
+    "verifyOtp": "Verify OTP",
+    "needHelp": "Need help? Message us on WhatsApp.",
+    "comingSoon": "Coming soon"
+  }
+}
