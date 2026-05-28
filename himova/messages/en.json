@@ -176,6 +176,21 @@
       "recentNpr": "Spend (30d)"
     }
   },
+  "photos": {
+    "title": "Photos",
+    "subtitle": "Multiple angles help shopkeepers and customers see the product clearly. The first photo is shown as the main thumbnail.",
+    "empty": "No photos uploaded yet.",
+    "primary": "Main",
+    "delete": "Delete photo",
+    "confirmDelete": "Delete this photo?",
+    "dropzoneTitle": "Tap or drop images here",
+    "dropzoneHint": "JPG, PNG, WEBP, GIF — up to 5 MB each",
+    "selectedCount": "{count, plural, =1 {1 file selected} other {# files selected}}",
+    "uploadedCount": "{count, plural, =1 {1 photo uploaded} other {# photos uploaded}}",
+    "upload": "Upload",
+    "uploading": "Uploading...",
+    "clear": "Clear"
+  },
   "comingSoon": {
     "ordersAdminTitle": "Orders",
     "ordersAdminBody": "All shopkeeper orders, filterable by status and date, with shipping/payment controls.",

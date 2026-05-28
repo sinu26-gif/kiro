@@ -1,6 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Plus, Pencil, Boxes } from "lucide-react";
+import { Plus, Pencil, Boxes, ImageIcon } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -26,6 +27,7 @@ type ProductRow = {
   sets: number;
   minPricePaisa: number | null;
   totalStock: number;
+  thumbnailUrl: string | null;
 };
 
 type RawProduct = {
@@ -42,6 +44,12 @@ type RawProduct = {
           price_paisa: number;
           warehouse_stock: number;
         }> | null;
+      }>
+    | null;
+  product_photos:
+    | Array<{
+        url: string;
+        sort_order: number;
       }>
     | null;
 };
@@ -84,7 +92,8 @@ async function loadProducts(filters: {
       product_variants:product_variants (
         id,
         set_types:set_types ( id, price_paisa, warehouse_stock )
-      )
+      ),
+      product_photos:product_photos ( url, sort_order )
     `
     )
     .order("created_at", { ascending: false });
@@ -113,6 +122,9 @@ async function loadProducts(filters: {
     const allSets = variants.flatMap((v) => v.set_types ?? []);
     const prices = allSets.map((s) => s.price_paisa).filter((n) => Number.isFinite(n));
     const stock = allSets.reduce((sum, s) => sum + (s.warehouse_stock ?? 0), 0);
+    const photos = [...(p.product_photos ?? [])].sort(
+      (a, b) => a.sort_order - b.sort_order
+    );
 
     return {
       id: p.id,
@@ -124,6 +136,7 @@ async function loadProducts(filters: {
       sets: allSets.length,
       minPricePaisa: prices.length > 0 ? Math.min(...prices) : null,
       totalStock: stock,
+      thumbnailUrl: photos[0]?.url ?? null,
     };
   });
 
@@ -228,9 +241,10 @@ function ProductsView({
                     <td className="px-4 py-3 font-medium">
                       <Link
                         href={`/admin/products/${p.id}`}
-                        className="hover:underline underline-offset-4"
+                        className="flex items-center gap-3 hover:underline underline-offset-4"
                       >
-                        {p.name}
+                        <ProductThumb url={p.thumbnailUrl} alt={p.name} />
+                        <span className="line-clamp-1">{p.name}</span>
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
@@ -279,6 +293,28 @@ function ProductStatusBadge({ status }: { status: "active" | "archived" }) {
   const t = useTranslations("products.status");
   if (status === "active") return <Badge variant="success">{t("active")}</Badge>;
   return <Badge variant="muted">{t("archived")}</Badge>;
+}
+
+function ProductThumb({ url, alt }: { url: string | null; alt: string }) {
+  if (!url) {
+    return (
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+        <ImageIcon className="h-4 w-4" aria-hidden />
+      </span>
+    );
+  }
+  return (
+    <span className="relative block h-10 w-10 shrink-0 overflow-hidden rounded-md border bg-muted">
+      <Image
+        src={url}
+        alt={alt}
+        fill
+        sizes="40px"
+        className="object-cover"
+        unoptimized
+      />
+    </span>
+  );
 }
 
 function EmptyState({ filtered }: { filtered: boolean }) {

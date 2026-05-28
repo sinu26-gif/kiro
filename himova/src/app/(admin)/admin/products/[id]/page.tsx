@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, Layers, Package } from "lucide-react";
+import { ArrowLeft, ImageIcon, Layers, Package } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { EditProductForm, type CategoryOption, type EditProductDefaults } from "./edit-form";
+import { PhotosSection, type ProductPhoto } from "./photos-section";
 import { StatusToggleButton } from "./status-toggle";
 
 export const metadata = { title: "Edit product" };
@@ -37,6 +38,11 @@ type ProductFull = {
   video_url: string | null;
   suggested_retail_paisa: number | null;
   product_variants: VariantWithSets[];
+  product_photos: Array<{
+    id: string;
+    url: string;
+    sort_order: number;
+  }>;
 };
 
 async function loadCategories(): Promise<CategoryOption[]> {
@@ -60,6 +66,9 @@ async function loadProduct(id: string): Promise<ProductFull | null> {
         set_types:set_types (
           id, label, sizes, price_paisa, warehouse_stock, reorder_threshold
         )
+      ),
+      product_photos:product_photos (
+        id, url, sort_order
       )
     `
     )
@@ -98,12 +107,18 @@ export default async function EditProductPage({
     (a, b) => a.sort_order - b.sort_order
   );
 
+  // Sort photos by sort_order so the "primary" badge is on the first one.
+  const photos: ProductPhoto[] = [...(product.product_photos ?? [])]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((p) => ({ id: p.id, url: p.url, sortOrder: p.sort_order }));
+
   return (
     <EditProductView
       product={product}
       defaults={defaults}
       categories={categories}
       variants={variants}
+      photos={photos}
     />
   );
 }
@@ -113,13 +128,16 @@ function EditProductView({
   defaults,
   categories,
   variants,
+  photos,
 }: {
   product: ProductFull;
   defaults: EditProductDefaults;
   categories: CategoryOption[];
   variants: VariantWithSets[];
+  photos: ProductPhoto[];
 }) {
   const t = useTranslations("products");
+  const tp = useTranslations("photos");
   const tc = useTranslations("common");
 
   const totalSets = variants.reduce((s, v) => s + (v.set_types?.length ?? 0), 0);
@@ -162,6 +180,21 @@ function EditProductView({
         </CardHeader>
         <CardContent>
           <EditProductForm defaults={defaults} categories={categories} />
+        </CardContent>
+      </Card>
+
+      {/* Photos section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ImageIcon className="h-4 w-4" aria-hidden />
+            {tp("title")}
+            <Badge variant="muted">{photos.length}</Badge>
+          </CardTitle>
+          <CardDescription>{tp("subtitle")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PhotosSection productId={product.id} photos={photos} />
         </CardContent>
       </Card>
 
