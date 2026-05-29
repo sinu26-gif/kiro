@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { normalisePhone, phoneToSyntheticEmail } from "@/lib/auth/phone";
+import { normalisePhone, phoneToSyntheticEmail, toLocalDigits } from "@/lib/auth/phone";
 import { requireRole } from "@/lib/auth/session";
 import { getSupabaseAdminClient } from "@/lib/supabase/server";
 
@@ -86,12 +86,17 @@ export async function createShopkeeper(
     };
   }
 
+  // The shopkeeper sees and types the plain 10-digit number. The synthetic
+  // email is built from the E.164 form for stable uniqueness, but the initial
+  // password matches what they read on screen (e.g. 9847465097).
+  const localPassword = toLocalDigits(phone);
+
   const admin = getSupabaseAdminClient();
 
   // 1. Auth user.
   const { data: created, error: createErr } = await admin.auth.admin.createUser({
     email: phoneToSyntheticEmail(phone),
-    password: phone, // initial password = phone number
+    password: localPassword,
     email_confirm: true,
     user_metadata: { must_change_password: true, full_name: parsed.data.ownerName },
   });
