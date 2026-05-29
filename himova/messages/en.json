@@ -551,5 +551,26 @@
     "customer": "Customer",
     "revenue": "Revenue",
     "view": "View"
+  },
+  "rewards": {
+    "title": "Run a reward cycle",
+    "subtitle": "Reward your top shopkeepers. Everyone gets notified.",
+    "cycleLabel": "Cycle label",
+    "cycleLabelPlaceholder": "e.g. May 2026",
+    "winner": "Winner",
+    "pickShopkeeper": "Pick shopkeeper",
+    "rewardType": "Reward",
+    "discountPercent": "Discount %",
+    "freeSet": "Free set",
+    "customItem": "Custom item",
+    "rewardValue": "Details",
+    "rewardValuePlaceholder": "e.g. 10, or 'Free travel bag'",
+    "addWinner": "Add another winner",
+    "announce": "Announce rewards",
+    "announcing": "Announcing...",
+    "announced": "Rewards announced and everyone notified.",
+    "recentTitle": "Recent rewards",
+    "recentEmpty": "No rewards given yet.",
+    "rank": "Rank"
   }
 }

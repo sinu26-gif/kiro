@@ -551,5 +551,26 @@
     "customer": "ग्राहक",
     "revenue": "आम्दानी",
     "view": "हेर्नुहोस्"
+  },
+  "rewards": {
+    "title": "पुरस्कार चक्र चलाउनुहोस्",
+    "subtitle": "आफ्ना शीर्ष पसलेहरूलाई पुरस्कृत गर्नुहोस्। सबैलाई सूचित गरिन्छ।",
+    "cycleLabel": "चक्र लेबल",
+    "cycleLabelPlaceholder": "जस्तै, मे २०२६",
+    "winner": "विजेता",
+    "pickShopkeeper": "पसले छान्नुहोस्",
+    "rewardType": "पुरस्कार",
+    "discountPercent": "छुट %",
+    "freeSet": "निःशुल्क सेट",
+    "customItem": "कस्टम वस्तु",
+    "rewardValue": "विवरण",
+    "rewardValuePlaceholder": "जस्तै 10, वा 'निःशुल्क झोला'",
+    "addWinner": "अर्को विजेता थप्नुहोस्",
+    "announce": "पुरस्कार घोषणा गर्नुहोस्",
+    "announcing": "घोषणा हुँदै...",
+    "announced": "पुरस्कार घोषणा गरियो र सबैलाई सूचित गरियो।",
+    "recentTitle": "हालैका पुरस्कार",
+    "recentEmpty": "अहिलेसम्म कुनै पुरस्कार दिइएको छैन।",
+    "rank": "क्रम"
   }
 }
