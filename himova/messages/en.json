@@ -608,5 +608,17 @@
     "recentOrders": "Recent orders",
     "noOrders": "No orders yet.",
     "viewOrder": "View"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account and preferences.",
+    "account": "Account",
+    "shopName": "Shop name",
+    "ownerName": "Owner",
+    "phone": "Phone",
+    "email": "Email",
+    "role": "Role",
+    "language": "Language",
+    "languageHint": "Switch between English and Nepali."
   }
 }

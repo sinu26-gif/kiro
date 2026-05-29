@@ -608,5 +608,17 @@
     "recentOrders": "हालैका अर्डर",
     "noOrders": "अहिले कुनै अर्डर छैन।",
     "viewOrder": "हेर्नुहोस्"
+  },
+  "settings": {
+    "title": "सेटिङ",
+    "subtitle": "आफ्नो खाता र प्राथमिकता व्यवस्थापन गर्नुहोस्।",
+    "account": "खाता",
+    "shopName": "पसलको नाम",
+    "ownerName": "मालिक",
+    "phone": "फोन",
+    "email": "इमेल",
+    "role": "भूमिका",
+    "language": "भाषा",
+    "languageHint": "English र नेपाली बीच बदल्नुहोस्।"
   }
 }
