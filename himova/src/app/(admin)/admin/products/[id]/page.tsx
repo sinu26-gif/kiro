@@ -1,17 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, ImageIcon, Layers, Package } from "lucide-react";
+import { ArrowLeft, ImageIcon, Package } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { formatNpr } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { EditProductForm, type CategoryOption, type EditProductDefaults } from "./edit-form";
 import { PhotosSection, type ProductPhoto } from "./photos-section";
 import { StatusToggleButton } from "./status-toggle";
+import { VariantsEditor, type EditorVariant } from "./variants-editor";
 
 export const metadata = { title: "Edit product" };
 
@@ -140,12 +140,21 @@ function EditProductView({
   const tp = useTranslations("photos");
   const tc = useTranslations("common");
 
-  const totalSets = variants.reduce((s, v) => s + (v.set_types?.length ?? 0), 0);
-  const totalStock = variants.reduce(
-    (s, v) =>
-      s + (v.set_types ?? []).reduce((sum, st) => sum + (st.warehouse_stock ?? 0), 0),
-    0
-  );
+  // Map DB rows to the editor's prop shape.
+  const editorVariants: EditorVariant[] = variants.map((v) => ({
+    id: v.id,
+    name: v.variant_name,
+    setTypes: [...(v.set_types ?? [])]
+      .sort((a, b) => a.label.localeCompare(b.label))
+      .map((st) => ({
+        id: st.id,
+        label: st.label,
+        sizes: st.sizes ?? [],
+        pricePaisa: st.price_paisa,
+        warehouseStock: st.warehouse_stock,
+        reorderThreshold: st.reorder_threshold,
+      })),
+  }));
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -198,7 +207,7 @@ function EditProductView({
         </CardContent>
       </Card>
 
-      {/* Variants section */}
+      {/* Variants + set types editor */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -208,90 +217,10 @@ function EditProductView({
           </CardTitle>
           <CardDescription>{t("variants.subtitle")}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {variants.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("variants.empty")}</p>
-          ) : (
-            variants.map((v) => (
-              <VariantRow key={v.id} variant={v} />
-            ))
-          )}
-          <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-            {t("variants.comingSoon")}
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Set-types summary at the bottom */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Layers className="h-4 w-4" aria-hidden />
-            {t("setTypes.title")}
-            <Badge variant="muted">{totalSets}</Badge>
-          </CardTitle>
-          <CardDescription>
-            {t("setTypes.subtitle")} &nbsp;·&nbsp; {t("setTypes.warehouseStock")}: {totalStock}
-          </CardDescription>
-        </CardHeader>
         <CardContent>
-          <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-            {t("setTypes.comingSoon")}
-          </p>
+          <VariantsEditor productId={product.id} variants={editorVariants} />
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-function VariantRow({ variant }: { variant: VariantWithSets }) {
-  const t = useTranslations("products.setTypes");
-  const sets = (variant.set_types ?? []).slice().sort((a, b) => a.label.localeCompare(b.label));
-
-  return (
-    <div className="rounded-lg border bg-card p-3">
-      <div className="mb-2 font-medium">{variant.variant_name}</div>
-      {sets.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No set types yet.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="text-muted-foreground">
-              <tr>
-                <th className="py-1 text-left font-medium">Set</th>
-                <th className="py-1 text-left font-medium">Sizes</th>
-                <th className="py-1 text-right font-medium">Price</th>
-                <th className="py-1 text-right font-medium">{t("warehouseStock")}</th>
-                <th className="py-1 text-right font-medium">{t("reorderAt")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sets.map((s) => (
-                <tr key={s.id} className="border-t">
-                  <td className="py-1.5 font-medium">{s.label}</td>
-                  <td className="py-1.5 tabular-nums text-muted-foreground">
-                    {(s.sizes ?? []).join(", ")}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums">
-                    {formatNpr(s.price_paisa)}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums">
-                    {s.warehouse_stock}
-                    {s.warehouse_stock <= s.reorder_threshold ? (
-                      <span className="ml-1 text-warning-foreground" aria-label="low stock">
-                        ⚠
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums text-muted-foreground">
-                    {s.reorder_threshold}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 }
