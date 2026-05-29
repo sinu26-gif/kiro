@@ -1,24 +1,36 @@
 import { useTranslations } from "next-intl";
 
-import { ComingSoon } from "@/components/shared/coming-soon";
 import { requireRole } from "@/lib/auth/session";
+import { loadCart, type CartSummary } from "@/lib/cart";
+
+import { CartClient } from "./cart-client";
 
 export const metadata = { title: "Cart" };
 
-export default async function ShopCartPage() {
+export default async function CartPage() {
   await requireRole(["shopkeeper"]);
-  return <View />;
+  let cart: CartSummary = { lines: [], totalSets: 0, subtotalPaisa: 0 };
+  try {
+    cart = await loadCart();
+  } catch {
+    /* empty cart on error */
+  }
+  return <CartView cart={cart} />;
 }
 
-function View() {
-  const t = useTranslations("comingSoon");
+function CartView({ cart }: { cart: CartSummary }) {
+  const t = useTranslations("cart");
   return (
-    <ComingSoon
-      title={t("cartShopTitle")}
-      description={t("cartShopBody")}
-      milestone={t("milestone")}
-      backHref="/shop"
-      backLabel={t("back")}
-    />
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+      </div>
+      <CartClient
+        lines={cart.lines}
+        subtotalPaisa={cart.subtotalPaisa}
+        totalSets={cart.totalSets}
+      />
+    </div>
   );
 }

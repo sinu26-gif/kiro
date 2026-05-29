@@ -475,6 +475,24 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["app_events"]["Insert"]>;
         Relationships: [];
       };
+      cart_items: {
+        Row: {
+          id: string;
+          shopkeeper_id: string;
+          set_type_id: string;
+          quantity: number;
+          created_at: Timestamp;
+          updated_at: Timestamp;
+        };
+        Insert: {
+          id?: string;
+          shopkeeper_id: string;
+          set_type_id: string;
+          quantity: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["cart_items"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
