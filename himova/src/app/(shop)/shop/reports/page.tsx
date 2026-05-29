@@ -5,6 +5,7 @@ import { loadShopReport, type ShopReport } from "@/lib/reports-shop";
 import { formatNpr } from "@/lib/format";
 import { formatPhoneForDisplay } from "@/lib/auth/phone";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ExportButtons, type CsvSection } from "@/components/shared/export-buttons";
 
 export const metadata = { title: "Reports" };
 export const dynamic = "force-dynamic";
@@ -44,11 +45,45 @@ function View({ report }: { report: ShopReport | null }) {
 
   const maxPieces = Math.max(1, ...r.bestProducts.map((p) => p.pieces));
 
+  const npr = (p: number) => (p / 100).toFixed(2);
+  const exportSections: CsvSection[] = [
+    {
+      title: "Summary",
+      headers: ["Metric", "Value"],
+      rows: [
+        ["Sales today (NPR)", npr(r.salesTodayPaisa)],
+        ["Sales this month (NPR)", npr(r.salesMonthPaisa)],
+        ["Sales all time (NPR)", npr(r.salesAllPaisa)],
+        ["Sales count (month)", r.saleCountMonth],
+        ["Pieces sold (month)", r.piecesMonth],
+        ["Stock value (NPR)", npr(r.stockValuePaisa)],
+      ],
+    },
+    {
+      title: "Bestsellers (month)",
+      headers: ["Product", "Pieces", "Revenue (NPR)"],
+      rows: r.bestProducts.map((p) => [p.name, p.pieces, npr(p.revenuePaisa)]),
+    },
+    {
+      title: "Top customers (month)",
+      headers: ["Customer", "Phone", "Spent (NPR)", "Visits"],
+      rows: r.topCustomers.map((c) => [
+        c.name,
+        c.phone ? formatPhoneForDisplay(c.phone) : "",
+        npr(c.spentPaisa),
+        c.visits,
+      ]),
+    },
+  ];
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("shopTitle")}</h1>
-        <p className="text-sm text-muted-foreground">{t("shopSubtitle")}</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{t("shopTitle")}</h1>
+          <p className="text-sm text-muted-foreground">{t("shopSubtitle")}</p>
+        </div>
+        <ExportButtons filename="himova-shop-report" sections={exportSections} />
       </div>
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">

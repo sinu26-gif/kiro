@@ -620,5 +620,9 @@
     "role": "Role",
     "language": "Language",
     "languageHint": "Switch between English and Nepali."
+  },
+  "exports": {
+    "excel": "Excel",
+    "pdf": "Print / PDF"
   }
 }

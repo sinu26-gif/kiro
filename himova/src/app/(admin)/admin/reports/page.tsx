@@ -6,6 +6,7 @@ import { loadAdminReport, type AdminReport } from "@/lib/reports-admin";
 import { formatNpr } from "@/lib/format";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ExportButtons, type CsvSection } from "@/components/shared/export-buttons";
 
 export const metadata = { title: "Reports" };
 export const dynamic = "force-dynamic";
@@ -45,11 +46,43 @@ function View({ report }: { report: AdminReport | null }) {
   const maxProductSets = Math.max(1, ...r.topProducts.map((p) => p.sets));
   const maxShopRev = Math.max(1, ...r.topShopkeepers.map((s) => s.revenuePaisa));
 
+  const npr = (p: number) => (p / 100).toFixed(2);
+  const exportSections: CsvSection[] = [
+    {
+      title: "Summary",
+      headers: ["Metric", "Value (NPR)"],
+      rows: [
+        ["Revenue today", npr(r.revenueTodayPaisa)],
+        ["Revenue this month", npr(r.revenueMonthPaisa)],
+        ["Revenue all time", npr(r.revenueAllPaisa)],
+        ["Orders this month", r.ordersThisMonth],
+      ],
+    },
+    {
+      title: "Top products",
+      headers: ["Product", "Sets", "Revenue (NPR)"],
+      rows: r.topProducts.map((p) => [p.name, p.sets, npr(p.revenuePaisa)]),
+    },
+    {
+      title: "Top shopkeepers",
+      headers: ["Shop", "Revenue (NPR)", "Orders"],
+      rows: r.topShopkeepers.map((s) => [s.name, npr(s.revenuePaisa), s.orders]),
+    },
+    {
+      title: "Outstanding payments",
+      headers: ["Order", "Shop", "Status", "Total (NPR)"],
+      rows: r.outstanding.map((o) => [o.id.slice(0, 8), o.shopName, o.status, npr(o.totalPaisa)]),
+    },
+  ];
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("adminTitle")}</h1>
-        <p className="text-sm text-muted-foreground">{t("adminSubtitle")}</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{t("adminTitle")}</h1>
+          <p className="text-sm text-muted-foreground">{t("adminSubtitle")}</p>
+        </div>
+        <ExportButtons filename="himova-admin-report" sections={exportSections} />
       </div>
 
       {/* KPI cards */}

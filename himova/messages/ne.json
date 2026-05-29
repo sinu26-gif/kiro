@@ -620,5 +620,9 @@
     "role": "भूमिका",
     "language": "भाषा",
     "languageHint": "English र नेपाली बीच बदल्नुहोस्।"
+  },
+  "exports": {
+    "excel": "Excel",
+    "pdf": "प्रिन्ट / PDF"
   }
 }
