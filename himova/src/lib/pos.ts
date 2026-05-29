@@ -38,7 +38,7 @@ type RawShopStock = {
       id: string;
       name: string;
       suggested_retail_paisa: number | null;
-      product_photos: Array<{ url: string; sort_order: number }> | null;
+      product_photos: Array<{ url: string; sort_order: number; variant_id: string | null }> | null;
     } | null;
   } | null;
 };
@@ -68,7 +68,7 @@ export async function loadPosProducts(): Promise<PosProduct[]> {
         variant_id, size, quantity,
         variant:product_variants (
           variant_name,
-          product:products ( id, name, suggested_retail_paisa, product_photos ( url, sort_order ) )
+          product:products ( id, name, suggested_retail_paisa, product_photos ( url, sort_order, variant_id ) )
         )
       `
       )
@@ -91,12 +91,18 @@ export async function loadPosProducts(): Promise<PosProduct[]> {
       const photos = [...(product.product_photos ?? [])].sort(
         (a, b) => a.sort_order - b.sort_order
       );
+      // This tile is a specific variant, so prefer its photo, then a general one.
+      const thumbnailUrl =
+        photos.find((p) => p.variant_id === key)?.url ??
+        photos.find((p) => !p.variant_id)?.url ??
+        photos[0]?.url ??
+        null;
       byVariant.set(key, {
         key,
         kind: "himova",
         productName: product.name,
         variantName: row.variant?.variant_name ?? null,
-        thumbnailUrl: photos[0]?.url ?? null,
+        thumbnailUrl,
         suggestedPricePaisa: product.suggested_retail_paisa ?? 0,
         sizes: [],
       });

@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Check, Loader2, X } from "lucide-react";
+import { Check, Loader2, Trash2, X } from "lucide-react";
 
 import { deleteShopkeeper, verifyShopkeeper } from "@/app/actions/shopkeepers";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,45 @@ export function PendingActions({ shopkeeperId }: { shopkeeperId: string }) {
       <Button size="sm" variant="ghost" className="text-destructive" onClick={reject} disabled={pending}>
         <X className="mr-1 h-3.5 w-3.5" aria-hidden />
         {t("reject")}
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * Inline remove (delete) button for an active / suspended shopkeeper row.
+ * Permanently deletes the shopkeeper and all their data (cascades).
+ */
+export function RemoveShopkeeperButton({ shopkeeperId }: { shopkeeperId: string }) {
+  const t = useTranslations("shopkeepers");
+  const router = useRouter();
+  const [pending, start] = useTransition();
+
+  function remove() {
+    if (!confirm(t("confirmDelete"))) return;
+    start(async () => {
+      const fd = new FormData();
+      fd.set("shopkeeperId", shopkeeperId);
+      await deleteShopkeeper(null, fd);
+      router.refresh();
+    });
+  }
+
+  return (
+    <div className="flex justify-end">
+      <Button
+        size="sm"
+        variant="ghost"
+        className="text-destructive"
+        onClick={remove}
+        disabled={pending}
+      >
+        {pending ? (
+          <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden />
+        ) : (
+          <Trash2 className="mr-1 h-3.5 w-3.5" aria-hidden />
+        )}
+        {t("removeShort")}
       </Button>
     </div>
   );

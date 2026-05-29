@@ -28,9 +28,12 @@ const initialUploadState: PhotoActionState = { ok: false };
 export function PhotosSection({
   productId,
   photos,
+  variantId,
 }: {
   productId: string;
   photos: ProductPhoto[];
+  /** When set, uploads are tagged to this variant (colour / style). */
+  variantId?: string;
 }) {
   const t = useTranslations("photos");
   const router = useRouter();
@@ -38,6 +41,10 @@ export function PhotosSection({
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [uploadState, uploadAction] = useFormState(uploadProductPhotos, initialUploadState);
+
+  // Unique key so multiple PhotosSections on one product page (general + each
+  // variant) don't share the same input id / htmlFor target.
+  const scope = variantId ? `${productId}-${variantId}` : productId;
 
   // After a successful upload, clear local preview state and refresh server data.
   useEffect(() => {
@@ -89,10 +96,11 @@ export function PhotosSection({
       {/* Upload form */}
       <form action={uploadAction} className="space-y-3">
         <input type="hidden" name="productId" value={productId} />
+        {variantId ? <input type="hidden" name="variantId" value={variantId} /> : null}
 
         {/* Drag + drop / click area */}
         <label
-          htmlFor={`photo-input-${productId}`}
+          htmlFor={`photo-input-${scope}`}
           onDragOver={(e) => {
             e.preventDefault();
             setDragActive(true);
@@ -120,7 +128,7 @@ export function PhotosSection({
         </label>
         <input
           ref={fileInputRef}
-          id={`photo-input-${productId}`}
+          id={`photo-input-${scope}`}
           name="files"
           type="file"
           accept={ACCEPTED_PHOTO_MIME_TYPES.join(",")}

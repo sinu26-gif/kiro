@@ -42,6 +42,7 @@ type ProductFull = {
     id: string;
     url: string;
     sort_order: number;
+    variant_id: string | null;
   }>;
 };
 
@@ -68,7 +69,7 @@ async function loadProduct(id: string): Promise<ProductFull | null> {
         )
       ),
       product_photos:product_photos (
-        id, url, sort_order
+        id, url, sort_order, variant_id
       )
     `
     )
@@ -108,9 +109,21 @@ export default async function EditProductPage({
   );
 
   // Sort photos by sort_order so the "primary" badge is on the first one.
-  const photos: ProductPhoto[] = [...(product.product_photos ?? [])]
-    .sort((a, b) => a.sort_order - b.sort_order)
+  // Photos with a variant_id belong to that variant's gallery; the rest are
+  // general product photos shown by default.
+  const sortedPhotos = [...(product.product_photos ?? [])].sort(
+    (a, b) => a.sort_order - b.sort_order
+  );
+  const photos: ProductPhoto[] = sortedPhotos
+    .filter((p) => !p.variant_id)
     .map((p) => ({ id: p.id, url: p.url, sortOrder: p.sort_order }));
+  const photosByVariant = new Map<string, ProductPhoto[]>();
+  for (const p of sortedPhotos) {
+    if (!p.variant_id) continue;
+    const list = photosByVariant.get(p.variant_id) ?? [];
+    list.push({ id: p.id, url: p.url, sortOrder: p.sort_order });
+    photosByVariant.set(p.variant_id, list);
+  }
 
   return (
     <EditProductView
@@ -119,6 +132,7 @@ export default async function EditProductPage({
       categories={categories}
       variants={variants}
       photos={photos}
+      photosByVariant={photosByVariant}
     />
   );
 }
@@ -129,12 +143,14 @@ function EditProductView({
   categories,
   variants,
   photos,
+  photosByVariant,
 }: {
   product: ProductFull;
   defaults: EditProductDefaults;
   categories: CategoryOption[];
   variants: VariantWithSets[];
   photos: ProductPhoto[];
+  photosByVariant: Map<string, ProductPhoto[]>;
 }) {
   const t = useTranslations("products");
   const tp = useTranslations("photos");
@@ -144,6 +160,7 @@ function EditProductView({
   const editorVariants: EditorVariant[] = variants.map((v) => ({
     id: v.id,
     name: v.variant_name,
+    photos: photosByVariant.get(v.id) ?? [],
     setTypes: [...(v.set_types ?? [])]
       .sort((a, b) => a.label.localeCompare(b.label))
       .map((st) => ({

@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { PendingActions } from "./pending-actions";
+import { PendingActions, RemoveShopkeeperButton } from "./pending-actions";
 
 export const metadata = { title: "Shopkeepers" };
 export const dynamic = "force-dynamic";
@@ -163,7 +163,9 @@ function ShopkeepersView({
                     <td className="px-4 py-3">
                       {s.status === "pending" ? (
                         <PendingActions shopkeeperId={s.id} />
-                      ) : null}
+                      ) : (
+                        <RemoveShopkeeperButton shopkeeperId={s.id} />
+                      )}
                     </td>
                   </tr>
                 ))}

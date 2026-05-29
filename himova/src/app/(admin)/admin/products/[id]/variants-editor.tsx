@@ -22,6 +22,8 @@ import { NativeSelect } from "@/components/ui/select";
 import { SET_TEMPLATES } from "@/lib/set-templates";
 import { formatNpr } from "@/lib/format";
 
+import { PhotosSection, type ProductPhoto } from "./photos-section";
+
 export type EditorSetType = {
   id: string;
   label: string;
@@ -35,6 +37,8 @@ export type EditorVariant = {
   id: string;
   name: string;
   setTypes: EditorSetType[];
+  /** Photos that belong to this specific variant (colour / style). */
+  photos: ProductPhoto[];
 };
 
 /**
@@ -244,6 +248,14 @@ function VariantBlock({
 
         {/* Add set type */}
         <AddSetTypeForm productId={productId} variantId={variant.id} />
+
+        {/* Per-variant photos */}
+        <div className="space-y-2 rounded-lg border bg-muted/10 p-3">
+          <p className="text-xs font-medium text-muted-foreground">
+            {t("photosTitle", { name: variant.name })}
+          </p>
+          <PhotosSection productId={productId} variantId={variant.id} photos={variant.photos} />
+        </div>
       </CardContent>
     </Card>
   );

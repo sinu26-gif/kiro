@@ -124,6 +124,13 @@ create table if not exists public.product_variants (
 
 create index if not exists product_variants_product_idx on public.product_variants (product_id);
 
+-- Per-variant photos: product_photos may optionally belong to a variant.
+-- Added here (after product_variants exists) to keep the bundle runnable in order.
+alter table public.product_photos
+  add column if not exists variant_id uuid
+  references public.product_variants(id) on delete set null;
+create index if not exists product_photos_variant_idx on public.product_photos (variant_id);
+
 -- ---------------------------------------------------------------------------
 -- set_types: a fixed size pack with its own price and warehouse stock
 -- ---------------------------------------------------------------------------

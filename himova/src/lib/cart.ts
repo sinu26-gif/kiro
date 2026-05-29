@@ -47,7 +47,7 @@ type RawCartRow = {
         id: string;
         name: string;
         status: string;
-        product_photos: Array<{ url: string; sort_order: number }> | null;
+        product_photos: Array<{ url: string; sort_order: number; variant_id: string | null }> | null;
       } | null;
     } | null;
   } | null;
@@ -71,7 +71,7 @@ export async function loadCart(): Promise<CartSummary> {
           id, variant_name,
           product:products (
             id, name, status,
-            product_photos:product_photos ( url, sort_order )
+            product_photos:product_photos ( url, sort_order, variant_id )
           )
         )
       )
@@ -114,6 +114,13 @@ export async function loadCart(): Promise<CartSummary> {
     const photos = [...(st.variant.product.product_photos ?? [])].sort(
       (a, b) => a.sort_order - b.sort_order
     );
+    // Prefer a photo for this line's variant, then a general product photo.
+    const variantId = st.variant.id;
+    const thumbnailUrl =
+      photos.find((p) => p.variant_id === variantId)?.url ??
+      photos.find((p) => !p.variant_id)?.url ??
+      photos[0]?.url ??
+      null;
 
     lines.push({
       cartItemId: row.id,
@@ -123,7 +130,7 @@ export async function loadCart(): Promise<CartSummary> {
       variantName: st.variant.variant_name,
       label: st.label,
       sizes: st.sizes ?? [],
-      thumbnailUrl: photos[0]?.url ?? null,
+      thumbnailUrl,
       quantity: row.quantity,
       unitPricePaisa: unit,
       basePricePaisa: st.price_paisa,

@@ -37,6 +37,8 @@ export type CatalogVariant = {
   id: string;
   name: string;
   setTypes: CatalogSetType[];
+  /** Photos specific to this variant (colour / style); may be empty. */
+  photos: string[];
 };
 
 export type CatalogProductCard = {
@@ -176,7 +178,7 @@ type RawCard = {
     id: string;
     set_types: Array<{ id: string; sizes: string[]; price_paisa: number; warehouse_stock: number }> | null;
   }> | null;
-  product_photos: Array<{ url: string; sort_order: number }> | null;
+  product_photos: Array<{ url: string; sort_order: number; variant_id: string | null }> | null;
 };
 
 function mapCard(p: RawCard, pricing: Map<string, PricingOverride>): CatalogProductCard {
@@ -188,11 +190,13 @@ function mapCard(p: RawCard, pricing: Map<string, PricingOverride>): CatalogProd
   });
   const totalStock = allSets.reduce((sum, s) => sum + (s.warehouse_stock ?? 0), 0);
   const photos = [...(p.product_photos ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+  // Prefer a general (non-variant) photo for the card thumbnail.
+  const thumbnailUrl = photos.find((ph) => !ph.variant_id)?.url ?? photos[0]?.url ?? null;
   return {
     id: p.id,
     name: p.name,
     categoryName: p.category?.name ?? null,
-    thumbnailUrl: photos[0]?.url ?? null,
+    thumbnailUrl,
     minPerPiecePaisa: perPiecePrices.length > 0 ? Math.min(...perPiecePrices) : null,
     totalStock,
     variantCount: variants.length,
@@ -206,7 +210,7 @@ const CARD_SELECT = `
     id,
     set_types:set_types ( id, sizes, price_paisa, warehouse_stock )
   ),
-  product_photos:product_photos ( url, sort_order )
+  product_photos:product_photos ( url, sort_order, variant_id )
 `;
 
 /**
@@ -297,7 +301,7 @@ type RawDetail = {
       warehouse_stock: number;
     }> | null;
   }> | null;
-  product_photos: Array<{ url: string; sort_order: number }> | null;
+  product_photos: Array<{ url: string; sort_order: number; variant_id: string | null }> | null;
 };
 
 /**
@@ -319,7 +323,7 @@ export async function loadCatalogProduct(productId: string): Promise<CatalogProd
         id, variant_name, sort_order,
         set_types:set_types ( id, label, sizes, price_paisa, warehouse_stock )
       ),
-      product_photos:product_photos ( url, sort_order )
+      product_photos:product_photos ( url, sort_order, variant_id )
     `
     )
     .eq("id", productId)
@@ -329,15 +333,26 @@ export async function loadCatalogProduct(productId: string): Promise<CatalogProd
   const raw = data as unknown as RawDetail;
   if (raw.status !== "active") return null;
 
-  const photos = [...(raw.product_photos ?? [])]
-    .sort((a, b) => a.sort_order - b.sort_order)
-    .map((p) => p.url);
+  const sortedPhotos = [...(raw.product_photos ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+
+  // General (non-variant) photos form the default gallery.
+  const photos = sortedPhotos.filter((p) => !p.variant_id).map((p) => p.url);
+
+  // Group the remaining photos by their variant.
+  const photosByVariant = new Map<string, string[]>();
+  for (const p of sortedPhotos) {
+    if (!p.variant_id) continue;
+    const list = photosByVariant.get(p.variant_id) ?? [];
+    list.push(p.url);
+    photosByVariant.set(p.variant_id, list);
+  }
 
   const variants: CatalogVariant[] = [...(raw.product_variants ?? [])]
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((v) => ({
       id: v.id,
       name: v.variant_name,
+      photos: photosByVariant.get(v.id) ?? [],
       setTypes: [...(v.set_types ?? [])]
         .sort((a, b) => a.label.localeCompare(b.label))
         .map((st) => {
@@ -371,14 +386,4 @@ export async function loadCatalogProduct(productId: string): Promise<CatalogProd
     photos,
     variants,
   };
-}
-
-/**
- * Convert a YouTube watch/share URL into an embeddable URL, or null.
- */
-export function youtubeEmbedUrl(url: string | null): string | null {
-  if (!url) return null;
-  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/) ?? null;
-  if (!match) return null;
-  return `https://www.youtube.com/embed/${match[1]}`;
 }

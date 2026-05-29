@@ -40,6 +40,18 @@ export async function uploadProductPhotos(
     return { ok: false, error: "Bad product id." };
   }
 
+  // Optional: attach these photos to a specific variant (colour / style).
+  // An empty / missing value means "general" product photos (variant_id NULL).
+  const rawVariantId = formData.get("variantId");
+  let variantId: string | null = null;
+  if (typeof rawVariantId === "string" && rawVariantId.trim() !== "") {
+    const variantCheck = z.string().trim().uuid().safeParse(rawVariantId);
+    if (!variantCheck.success) {
+      return { ok: false, error: "Bad variant id." };
+    }
+    variantId = variantCheck.data;
+  }
+
   const files = formData.getAll("files").filter((f): f is File => f instanceof File);
   if (files.length === 0) {
     return { ok: false, error: "Pick at least one image to upload." };
@@ -47,13 +59,32 @@ export async function uploadProductPhotos(
 
   const admin = getSupabaseAdminClient();
 
-  // Discover the next sort_order so new photos append to the gallery.
-  const { data: existing } = await admin
+  // If a variant was given, make sure it actually belongs to this product so a
+  // bad form value can't attach photos to another product's variant.
+  if (variantId) {
+    const { data: variantRow } = await admin
+      .from("product_variants")
+      .select("id")
+      .eq("id", variantId)
+      .eq("product_id", idCheck.data)
+      .maybeSingle();
+    if (!variantRow) {
+      return { ok: false, error: "That variant no longer exists." };
+    }
+  }
+
+  // Discover the next sort_order (scoped to the variant, or to general photos)
+  // so new photos append to the right gallery.
+  let existingQuery = admin
     .from("product_photos")
     .select("sort_order")
     .eq("product_id", idCheck.data)
     .order("sort_order", { ascending: false })
     .limit(1);
+  existingQuery = variantId
+    ? existingQuery.eq("variant_id", variantId)
+    : existingQuery.is("variant_id", null);
+  const { data: existing } = await existingQuery;
   let nextOrder = ((existing ?? [])[0]?.sort_order ?? -1) + 1;
 
   let uploaded = 0;
@@ -89,6 +120,7 @@ export async function uploadProductPhotos(
 
     const { error: dbErr } = await admin.from("product_photos").insert({
       product_id: idCheck.data,
+      variant_id: variantId,
       url: publicProductPhotoUrl(key),
       sort_order: nextOrder,
     });

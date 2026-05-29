@@ -110,7 +110,8 @@
     "noDocument": "No document uploaded",
     "selfRegistered": "Self-registered",
     "document": "Verification document",
-    "pendingCount": "{count} awaiting verification"
+    "pendingCount": "{count} awaiting verification",
+    "removeShort": "Remove"
   },
   "products": {
     "title": "Products",
@@ -178,7 +179,8 @@
       "cancel": "Cancel",
       "delete": "Delete variant",
       "confirmDelete": "Delete this variant and all its set types? This cannot be undone.",
-      "setsCount": "{count, plural, =0 {no sets} one {# set} other {# sets}}"
+      "setsCount": "{count, plural, =0 {no sets} one {# set} other {# sets}}",
+      "photosTitle": "Photos for {name}"
     },
     "setTypes": {
       "title": "Set types",
@@ -229,7 +231,7 @@
   },
   "photos": {
     "title": "Photos",
-    "subtitle": "Multiple angles help shopkeepers and customers see the product clearly. The first photo is shown as the main thumbnail.",
+    "subtitle": "Multiple angles help shopkeepers and customers see the product clearly. The first photo is the main thumbnail. Add colour-specific photos under each variant below.",
     "empty": "No photos uploaded yet.",
     "primary": "Main",
     "delete": "Delete photo",

@@ -80,6 +80,7 @@ export type Database = {
         Row: {
           id: string;
           product_id: string;
+          variant_id: string | null;
           url: string;
           sort_order: number;
           created_at: Timestamp;
@@ -87,6 +88,7 @@ export type Database = {
         Insert: {
           id?: string;
           product_id: string;
+          variant_id?: string | null;
           url: string;
           sort_order?: number;
         };

@@ -50,6 +50,7 @@ type RawProduct = {
     | Array<{
         url: string;
         sort_order: number;
+        variant_id: string | null;
       }>
     | null;
 };
@@ -93,7 +94,7 @@ async function loadProducts(filters: {
         id,
         set_types:set_types ( id, price_paisa, warehouse_stock )
       ),
-      product_photos:product_photos ( url, sort_order )
+      product_photos:product_photos ( url, sort_order, variant_id )
     `
     )
     .order("created_at", { ascending: false });
@@ -136,7 +137,8 @@ async function loadProducts(filters: {
       sets: allSets.length,
       minPricePaisa: prices.length > 0 ? Math.min(...prices) : null,
       totalStock: stock,
-      thumbnailUrl: photos[0]?.url ?? null,
+      thumbnailUrl:
+        photos.find((ph) => !ph.variant_id)?.url ?? photos[0]?.url ?? null,
     };
   });
 
