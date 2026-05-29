@@ -572,5 +572,41 @@
     "recentTitle": "हालैका पुरस्कार",
     "recentEmpty": "अहिलेसम्म कुनै पुरस्कार दिइएको छैन।",
     "rank": "क्रम"
+  },
+  "pricing": {
+    "title": "कस्टम मूल्य",
+    "subtitle": "यो पसलेलाई निश्चित सेटमा विशेष मूल्य दिनुहोस्।",
+    "base": "आधार",
+    "off": "छुट",
+    "remove": "हटाउनुहोस्",
+    "noOverrides": "अहिले कुनै कस्टम मूल्य छैन। तल थप्नुहोस्।",
+    "noSets": "पहिले उत्पादन र सेट थप्नुहोस्।",
+    "set": "सेट",
+    "type": "प्रकार",
+    "percentOff": "प्रतिशत छुट",
+    "fixedPrice": "निश्चित मूल्य",
+    "percentLabel": "छुट %",
+    "priceLabel": "मूल्य (NPR)",
+    "noteLabel": "ब्याज नोट (वैकल्पिक)",
+    "notePlaceholder": "जस्तै, वफादारी मूल्य",
+    "save": "मूल्य सेभ गर्नुहोस्"
+  },
+  "shopkeeperDetail": {
+    "title": "पसले",
+    "back": "पसलेहरू",
+    "suspend": "निलम्बन",
+    "activate": "सक्रिय गर्नुहोस्",
+    "contact": "सम्पर्क",
+    "phone": "फोन",
+    "address": "ठेगाना",
+    "location": "स्थान",
+    "viewOnMap": "नक्सामा हेर्नुहोस्",
+    "ordersSummary": "अर्डर",
+    "totalOrders": "कुल अर्डर",
+    "totalSpend": "कुल खर्च",
+    "lastOrder": "अन्तिम अर्डर",
+    "recentOrders": "हालैका अर्डर",
+    "noOrders": "अहिले कुनै अर्डर छैन।",
+    "viewOrder": "हेर्नुहोस्"
   }
 }

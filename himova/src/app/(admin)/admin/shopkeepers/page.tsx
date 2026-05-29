@@ -90,7 +90,14 @@ function ShopkeepersView({ rows }: { rows: ShopkeeperRow[] }) {
               <tbody>
                 {rows.map((s) => (
                   <tr key={s.id} className="border-b last:border-0">
-                    <td className="px-4 py-3 font-medium">{s.shop_name}</td>
+                    <td className="px-4 py-3 font-medium">
+                      <Link
+                        href={`/admin/shopkeepers/${s.id}`}
+                        className="hover:underline underline-offset-4"
+                      >
+                        {s.shop_name}
+                      </Link>
+                    </td>
                     <td className="px-4 py-3">{s.owner_name}</td>
                     <td className="px-4 py-3 tabular-nums">{formatPhoneForDisplay(s.phone)}</td>
                     <td className="px-4 py-3 text-muted-foreground">{s.address ?? "—"}</td>

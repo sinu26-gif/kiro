@@ -572,5 +572,41 @@
     "recentTitle": "Recent rewards",
     "recentEmpty": "No rewards given yet.",
     "rank": "Rank"
+  },
+  "pricing": {
+    "title": "Custom pricing",
+    "subtitle": "Give this shopkeeper a special price on specific sets.",
+    "base": "Base",
+    "off": "off",
+    "remove": "Remove",
+    "noOverrides": "No custom prices yet. Add one below.",
+    "noSets": "Add products and set types first.",
+    "set": "Set",
+    "type": "Type",
+    "percentOff": "Percent off",
+    "fixedPrice": "Fixed price",
+    "percentLabel": "Discount %",
+    "priceLabel": "Price (NPR)",
+    "noteLabel": "Badge note (optional)",
+    "notePlaceholder": "e.g. Loyalty price",
+    "save": "Save price"
+  },
+  "shopkeeperDetail": {
+    "title": "Shopkeeper",
+    "back": "Shopkeepers",
+    "suspend": "Suspend",
+    "activate": "Activate",
+    "contact": "Contact",
+    "phone": "Phone",
+    "address": "Address",
+    "location": "Location",
+    "viewOnMap": "View on map",
+    "ordersSummary": "Orders",
+    "totalOrders": "Total orders",
+    "totalSpend": "Total spend",
+    "lastOrder": "Last order",
+    "recentOrders": "Recent orders",
+    "noOrders": "No orders yet.",
+    "viewOrder": "View"
   }
 }
