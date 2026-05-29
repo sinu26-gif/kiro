@@ -20,6 +20,7 @@ const schema = z.object({
   ownerName: z.string().trim().min(2, "Owner name is too short.").max(120),
   phone: z.string().trim().min(1, "Enter your phone number."),
   password: z.string().min(6, "Password must be at least 6 characters."),
+  shopCategory: z.enum(["shoes", "clothing", "both"]).default("both"),
   address: z
     .string()
     .trim()
@@ -47,6 +48,7 @@ export async function registerShopkeeper(
     ownerName: formData.get("ownerName"),
     phone: formData.get("phone"),
     password: formData.get("password"),
+    shopCategory: formData.get("shopCategory") ?? "both",
     address: formData.get("address"),
   });
 
@@ -143,6 +145,7 @@ export async function registerShopkeeper(
     shop_name: parsed.data.shopName,
     owner_name: parsed.data.ownerName,
     phone,
+    shop_category: parsed.data.shopCategory,
     address: parsed.data.address,
     status: "pending",
     self_registered: true,

@@ -344,7 +344,7 @@
     "chooseVariant": "Choose a colour / style",
     "chooseSet": "Choose a set",
     "sizes": "Sizes",
-    "perSet": "per set",
+    "perSet": "/ set",
     "yourPrice": "Your price",
     "qty": "Sets",
     "addToCart": "Add to cart",
@@ -354,7 +354,9 @@
     "selectFirst": "Select a colour and a set first.",
     "noVariants": "This product has no sets available yet.",
     "watchVideo": "Watch video",
-    "stockSets": "{count} in stock"
+    "stockSets": "{count} in stock",
+    "setUnit": "set",
+    "pcsPerSet": "{count} pcs/set"
   },
   "cart": {
     "title": "Cart",
@@ -676,5 +678,41 @@
   "loginExtra": {
     "newHere": "New to Himova?",
     "registerCta": "Register your shop"
+  },
+  "catalogExtra": {
+    "perPiece": "/ pair",
+    "perPc": "/ pc"
+  },
+  "discover": {
+    "newArrivals": "New arrivals",
+    "newArrivalsSub": "The latest products added to Himova.",
+    "bestSellers": "Best sellers",
+    "bestSellersSub": "Most sold across all Himova shopkeepers.",
+    "recommended": "Recommended for you",
+    "recommendedSub": "Products you sell the most — easy to re-order.",
+    "previousOrders": "Your previous orders",
+    "previousOrdersSub": "Products you've ordered from Himova before.",
+    "viewAll": "View all",
+    "empty": "Nothing here yet.",
+    "browseCatalog": "Browse catalog"
+  },
+  "shopCategory": {
+    "label": "What does this shop sell?",
+    "shoes": "Shoes only",
+    "clothing": "Clothing only",
+    "both": "Shoes and clothing",
+    "hint": "Shoes-only and clothing-only shops only see products in their department."
+  },
+  "customers": {
+    "title": "Customers",
+    "subtitle": "Customers you've recorded through the POS.",
+    "empty": "No customers yet. They're added automatically when you enter a phone at checkout.",
+    "name": "Name",
+    "phone": "Phone",
+    "spent": "Total spent",
+    "visits": "Visits",
+    "lastVisit": "Last visit",
+    "search": "Search by name or phone...",
+    "noResults": "No matching customers."
   }
 }

@@ -1,14 +1,11 @@
-import Link from "next/link";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { ImageIcon, PackageSearch } from "lucide-react";
+import { PackageSearch } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { loadCatalogCards, type CatalogProductCard } from "@/lib/catalog";
-import { formatNpr } from "@/lib/format";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { ProductCard } from "@/components/catalog/product-card";
+import { Card } from "@/components/ui/card";
 
 import { CatalogSearchBar, type CatalogCategory } from "./search-bar";
 
@@ -64,6 +61,7 @@ function CatalogView({
   filtered: boolean;
 }) {
   const t = useTranslations("catalog");
+  const tc = useTranslations("catalogExtra");
 
   return (
     <div className="space-y-6">
@@ -86,58 +84,16 @@ function CatalogView({
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {cards.map((card) => (
-            <CatalogCard key={card.id} card={card} />
+            <ProductCard
+              key={card.id}
+              card={card}
+              perPieceLabel={tc("perPiece")}
+              fromLabel={t("from")}
+              outOfStockLabel={t("outOfStock")}
+            />
           ))}
         </div>
       )}
     </div>
-  );
-}
-
-function CatalogCard({ card }: { card: CatalogProductCard }) {
-  const t = useTranslations("catalog");
-  const outOfStock = card.totalStock <= 0;
-
-  return (
-    <Link
-      href={`/shop/catalog/${card.id}`}
-      className="group rounded-xl border bg-card shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <div className="relative aspect-square overflow-hidden rounded-t-xl bg-muted">
-        {card.thumbnailUrl ? (
-          <Image
-            src={card.thumbnailUrl}
-            alt={card.name}
-            fill
-            sizes="(min-width: 1024px) 240px, (min-width: 640px) 33vw, 50vw"
-            className="object-cover transition-transform group-hover:scale-105"
-            unoptimized
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
-            <ImageIcon className="h-8 w-8" aria-hidden />
-          </div>
-        )}
-        {outOfStock ? (
-          <span className="absolute left-2 top-2">
-            <Badge variant="muted">{t("outOfStock")}</Badge>
-          </span>
-        ) : null}
-      </div>
-      <CardContent className="space-y-1 p-3">
-        {card.categoryName ? (
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            {card.categoryName}
-          </p>
-        ) : null}
-        <p className="line-clamp-2 text-sm font-medium leading-snug">{card.name}</p>
-        {card.minEffectivePricePaisa !== null ? (
-          <p className="pt-1 text-sm font-semibold text-primary">
-            <span className="text-[11px] font-normal text-muted-foreground">{t("from")} </span>
-            {formatNpr(card.minEffectivePricePaisa)}
-          </p>
-        ) : null}
-      </CardContent>
-    </Link>
   );
 }

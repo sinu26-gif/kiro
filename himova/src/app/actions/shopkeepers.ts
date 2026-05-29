@@ -18,6 +18,7 @@ const createShopkeeperSchema = z.object({
   shopName: z.string().trim().min(2, "Shop name is too short."),
   ownerName: z.string().trim().min(2, "Owner name is too short."),
   phone: z.string().trim().min(1, "Enter a phone number."),
+  shopCategory: z.enum(["shoes", "clothing", "both"]).default("both"),
   address: z
     .string()
     .trim()
@@ -63,6 +64,7 @@ export async function createShopkeeper(
     shopName: formData.get("shopName"),
     ownerName: formData.get("ownerName"),
     phone: formData.get("phone"),
+    shopCategory: formData.get("shopCategory") ?? "both",
     address: formData.get("address"),
     lat: formData.get("lat"),
     lng: formData.get("lng"),
@@ -134,6 +136,7 @@ export async function createShopkeeper(
     shop_name: parsed.data.shopName,
     owner_name: parsed.data.ownerName,
     phone,
+    shop_category: parsed.data.shopCategory,
     address: parsed.data.address,
     location_lat: parsed.data.lat,
     location_lng: parsed.data.lng,

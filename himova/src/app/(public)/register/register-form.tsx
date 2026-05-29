@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
 const initial: RegisterState = { ok: false };
@@ -26,6 +27,7 @@ function SubmitButton() {
 
 export function RegisterForm() {
   const t = useTranslations("register");
+  const tsc = useTranslations("shopCategory");
   const [state, action] = useFormState(registerShopkeeper, initial);
 
   if (state.ok) {
@@ -49,6 +51,15 @@ export function RegisterForm() {
       <Field label={t("ownerName")} name="ownerName" placeholder={t("ownerNamePlaceholder")} error={state.fieldErrors?.ownerName} required />
       <Field label={t("phone")} name="phone" type="tel" inputMode="tel" placeholder={t("phonePlaceholder")} error={state.fieldErrors?.phone} required />
       <Field label={t("password")} name="password" type="password" placeholder={t("passwordPlaceholder")} error={state.fieldErrors?.password} required />
+
+      <div className="space-y-2">
+        <Label htmlFor="shopCategory">{tsc("label")}</Label>
+        <NativeSelect id="shopCategory" name="shopCategory" defaultValue="both">
+          <option value="both">{tsc("both")}</option>
+          <option value="shoes">{tsc("shoes")}</option>
+          <option value="clothing">{tsc("clothing")}</option>
+        </NativeSelect>
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="address">{t("address")}</Label>

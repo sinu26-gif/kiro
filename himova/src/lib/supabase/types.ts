@@ -38,6 +38,7 @@ export type Database = {
           slug: string;
           parent_id: string | null;
           sort_order: number;
+          department: "shoes" | "clothing" | "other";
           created_at: Timestamp;
         };
         Insert: {
@@ -46,6 +47,7 @@ export type Database = {
           slug: string;
           parent_id?: string | null;
           sort_order?: number;
+          department?: "shoes" | "clothing" | "other";
         };
         Update: Partial<Database["public"]["Tables"]["categories"]["Insert"]>;
         Relationships: [];
@@ -144,6 +146,7 @@ export type Database = {
           location_lng: number | null;
           logo_url: string | null;
           status: "pending" | "active" | "suspended";
+          shop_category: "shoes" | "clothing" | "both";
           document_path: string | null;
           document_type: string | null;
           self_registered: boolean;
@@ -161,6 +164,7 @@ export type Database = {
           location_lng?: number | null;
           logo_url?: string | null;
           status?: "pending" | "active" | "suspended";
+          shop_category?: "shoes" | "clothing" | "both";
           document_path?: string | null;
           document_type?: string | null;
           self_registered?: boolean;

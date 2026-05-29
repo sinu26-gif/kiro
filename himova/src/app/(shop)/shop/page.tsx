@@ -1,35 +1,65 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import {
-  ArrowRight,
-  Package,
-  Receipt,
-  ShoppingBag,
-  Sparkles,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowRight, Package, Receipt, ShoppingBag, Sparkles, TrendingUp } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
 import { getShopkeeperContext, type ShopkeeperStatus } from "@/lib/shopkeeper";
+import {
+  loadBestSellers,
+  loadNewArrivals,
+  loadPreviousOrderProducts,
+  loadRecommended,
+} from "@/lib/discovery";
+import type { CatalogProductCard } from "@/lib/catalog";
 import { VerificationBanner } from "@/components/shop/verification-banner";
+import { DiscoveryRow } from "@/components/catalog/discovery-view";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata = { title: "Home" };
+export const dynamic = "force-dynamic";
+
+type Feeds = {
+  newArrivals: CatalogProductCard[];
+  bestSellers: CatalogProductCard[];
+  recommended: CatalogProductCard[];
+  previousOrders: CatalogProductCard[];
+};
 
 export default async function ShopHomePage() {
   const user = await requireRole(["shopkeeper"]);
   const greetingName = user.fullName ?? "Shopkeeper";
+
   let status: ShopkeeperStatus = "active";
+  const feeds: Feeds = { newArrivals: [], bestSellers: [], recommended: [], previousOrders: [] };
   try {
     const ctx = await getShopkeeperContext();
     if (ctx) status = ctx.status;
+    const [newArrivals, bestSellers, recommended, previousOrders] = await Promise.all([
+      loadNewArrivals(4),
+      loadBestSellers(4),
+      loadRecommended(4),
+      loadPreviousOrderProducts(4),
+    ]);
+    feeds.newArrivals = newArrivals;
+    feeds.bestSellers = bestSellers;
+    feeds.recommended = recommended;
+    feeds.previousOrders = previousOrders;
   } catch {
-    status = "active";
+    /* show empty home */
   }
-  return <ShopHomeView name={greetingName} status={status} />;
+
+  return <ShopHomeView name={greetingName} status={status} feeds={feeds} />;
 }
 
-function ShopHomeView({ name, status }: { name: string; status: ShopkeeperStatus }) {
+function ShopHomeView({
+  name,
+  status,
+  feeds,
+}: {
+  name: string;
+  status: ShopkeeperStatus;
+  feeds: Feeds;
+}) {
   const t = useTranslations("shopHome");
   const tNav = useTranslations("shopNav");
 
@@ -40,12 +70,12 @@ function ShopHomeView({ name, status }: { name: string; status: ShopkeeperStatus
     { label: tNav("leaderboard"), href: "/shop/leaderboard", icon: TrendingUp, tone: "from-amber-500/15 to-amber-500/0" },
   ];
 
-  const sections = [
-    { key: "newArrivals", title: t("newArrivals") },
-    { key: "bestSellers", title: t("bestSellers") },
-    { key: "recommended", title: t("recommended") },
-    { key: "previousOrders", title: t("previousOrders") },
-  ];
+  const hasAnyFeed =
+    feeds.newArrivals.length +
+      feeds.bestSellers.length +
+      feeds.recommended.length +
+      feeds.previousOrders.length >
+    0;
 
   return (
     <div className="space-y-8">
@@ -63,7 +93,6 @@ function ShopHomeView({ name, status }: { name: string; status: ShopkeeperStatus
             <CardTitle className="text-2xl tracking-tight sm:text-3xl">
               {t("greeting", { name })}
             </CardTitle>
-            <p className="text-sm text-muted-foreground">{t("emptyState")}</p>
           </CardHeader>
         </div>
         <CardContent>
@@ -76,19 +105,13 @@ function ShopHomeView({ name, status }: { name: string; status: ShopkeeperStatus
                   href={q.href}
                   className="group relative overflow-hidden rounded-xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <div
-                    aria-hidden
-                    className={`pointer-events-none absolute inset-x-0 top-0 h-12 bg-gradient-to-b ${q.tone}`}
-                  />
+                  <div aria-hidden className={`pointer-events-none absolute inset-x-0 top-0 h-12 bg-gradient-to-b ${q.tone}`} />
                   <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <Icon className="h-5 w-5" aria-hidden />
                   </span>
                   <div className="relative mt-3 flex items-center justify-between">
                     <span className="font-medium">{q.label}</span>
-                    <ArrowRight
-                      className="h-4 w-4 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5"
-                      aria-hidden
-                    />
+                    <ArrowRight className="h-4 w-4 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" aria-hidden />
                   </div>
                 </Link>
               );
@@ -97,18 +120,21 @@ function ShopHomeView({ name, status }: { name: string; status: ShopkeeperStatus
         </CardContent>
       </Card>
 
-      {/* Curated sections (placeholders until catalog ships) */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {sections.map((s) => (
-          <Card key={s.key} className="border-dashed bg-card/60">
-            <CardHeader>
-              <CardTitle className="text-base">{s.title}</CardTitle>
-              <CardDescription>{t("emptyState")}</CardDescription>
-            </CardHeader>
-            <CardContent />
-          </Card>
-        ))}
-      </div>
+      {/* Discovery feeds */}
+      <DiscoveryRow feed="newArrivals" href="/shop/new-arrivals" cards={feeds.newArrivals} />
+      <DiscoveryRow feed="bestSellers" href="/shop/bestsellers" cards={feeds.bestSellers} />
+      <DiscoveryRow feed="recommended" href="/shop/recommended" cards={feeds.recommended} />
+      <DiscoveryRow feed="previousOrders" href="/shop/previous-orders" cards={feeds.previousOrders} />
+
+      {!hasAnyFeed ? (
+        <Card className="border-dashed bg-card/60">
+          <CardHeader>
+            <CardTitle className="text-base">{t("newArrivals")}</CardTitle>
+            <CardDescription>{t("emptyState")}</CardDescription>
+          </CardHeader>
+          <CardContent />
+        </Card>
+      ) : null}
     </div>
   );
 }

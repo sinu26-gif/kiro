@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/select";
 
 const initialState: ShopkeeperActionState = { ok: false };
 
@@ -24,6 +25,7 @@ function SubmitButton() {
 
 export function CreateShopkeeperForm() {
   const t = useTranslations("shopkeepers.form");
+  const tsc = useTranslations("shopCategory");
   const [state, action] = useFormState(createShopkeeper, initialState);
 
   return (
@@ -51,6 +53,17 @@ export function CreateShopkeeperForm() {
         error={state.fieldErrors?.phone}
         required
       />
+
+      <div className="space-y-2">
+        <Label htmlFor="shopCategory">{tsc("label")}</Label>
+        <NativeSelect id="shopCategory" name="shopCategory" defaultValue="both">
+          <option value="both">{tsc("both")}</option>
+          <option value="shoes">{tsc("shoes")}</option>
+          <option value="clothing">{tsc("clothing")}</option>
+        </NativeSelect>
+        <p className="text-xs text-muted-foreground">{tsc("hint")}</p>
+      </div>
+
       <Field
         label={t("address")}
         placeholder={t("addressPlaceholder")}

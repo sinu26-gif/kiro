@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
  */
 export function ProductOrderPanel({ variants }: { variants: CatalogVariant[] }) {
   const t = useTranslations("productDetail");
+  const tc = useTranslations("catalogExtra");
   const router = useRouter();
   const [pending, start] = useTransition();
   const [done, setDone] = useState(false);
@@ -139,7 +140,15 @@ export function ProductOrderPanel({ variants }: { variants: CatalogVariant[] }) 
                   </span>
                   <span className="ml-3 shrink-0 text-right">
                     <span className="block text-sm font-semibold">
-                      {formatNpr(s.effectivePricePaisa)}
+                      {formatNpr(s.perPiecePricePaisa)}
+                      <span className="text-[10px] font-normal text-muted-foreground">
+                        {" "}
+                        {tc("perPiece")}
+                      </span>
+                    </span>
+                    <span className="block text-[11px] text-muted-foreground">
+                      {t("pcsPerSet", { count: s.pieceCount })} · {formatNpr(s.effectivePricePaisa)}
+                      {t("perSet")}
                     </span>
                     {s.priceNote ? (
                       <Badge variant="success" className="mt-0.5 px-1.5 py-0 text-[10px]">
@@ -196,6 +205,11 @@ export function ProductOrderPanel({ variants }: { variants: CatalogVariant[] }) 
           <div>
             <p className="text-xs text-muted-foreground">{t("yourPrice")}</p>
             <p className="text-lg font-bold text-primary">{formatNpr(lineTotal)}</p>
+            {activeSet ? (
+              <p className="text-[11px] text-muted-foreground">
+                {qty} {t("setUnit")} × {formatNpr(activeSet.effectivePricePaisa)}
+              </p>
+            ) : null}
           </div>
           <Button onClick={submit} disabled={pending} size="tap">
             {pending ? (
