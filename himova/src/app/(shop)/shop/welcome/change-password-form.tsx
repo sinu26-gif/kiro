@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
@@ -29,7 +30,7 @@ export function ChangePasswordForm() {
   const router = useRouter();
   const [state, action] = useFormState(changePassword, initialState);
 
-  // After successful change, navigate to /shop. Middleware will allow it now.
+  // After successful change, navigate to /shop home.
   useEffect(() => {
     if (state.ok) {
       router.replace("/shop");
@@ -76,7 +77,12 @@ export function ChangePasswordForm() {
         </Alert>
       ) : null}
 
-      <SubmitButton />
+      <div className="space-y-2">
+        <SubmitButton />
+        <Button asChild variant="ghost" size="tap" className="w-full">
+          <Link href="/shop">{t("skipForNow")}</Link>
+        </Button>
+      </div>
     </form>
   );
 }

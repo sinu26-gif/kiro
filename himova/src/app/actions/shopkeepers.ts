@@ -93,12 +93,14 @@ export async function createShopkeeper(
 
   const admin = getSupabaseAdminClient();
 
-  // 1. Auth user.
+  // 1. Auth user — initial password matches the phone number. We do NOT
+  // set must_change_password; changing the password is the shopkeeper's
+  // choice (they can do it from /shop/welcome or settings later).
   const { data: created, error: createErr } = await admin.auth.admin.createUser({
     email: phoneToSyntheticEmail(phone),
     password: localPassword,
     email_confirm: true,
-    user_metadata: { must_change_password: true, full_name: parsed.data.ownerName },
+    user_metadata: { full_name: parsed.data.ownerName },
   });
 
   if (createErr || !created.user) {

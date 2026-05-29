@@ -60,12 +60,8 @@ export async function loginAsShopkeeper(
     return { ok: false, error: "This account is not a shopkeeper account." };
   }
 
-  const mustChange =
-    (data.user.user_metadata as { must_change_password?: boolean } | null)
-      ?.must_change_password === true;
-
   revalidatePath("/", "layout");
-  redirect(mustChange ? "/shop/welcome" : "/shop");
+  redirect("/shop");
 }
 
 // ---------------------------------------------------------------------------
