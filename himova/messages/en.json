@@ -417,5 +417,37 @@
     "address": "Address",
     "paymentMethod": "Payment method",
     "noteFromShop": "Note from shopkeeper"
+  },
+  "warehouseStock": {
+    "title": "Warehouse stock",
+    "subtitle": "Current set stock. Low items are highlighted. Restock with the + control.",
+    "empty": "No set types yet. Add products and set types first.",
+    "product": "Product",
+    "variant": "Variant",
+    "set": "Set",
+    "sizes": "Sizes",
+    "stock": "Sets in stock",
+    "reorderAt": "Reorder at",
+    "low": "Low",
+    "restock": "Restock",
+    "adjust": "Adjust stock",
+    "amountPlaceholder": "e.g. 10 or -2",
+    "notePlaceholder": "Note (optional)",
+    "apply": "Apply",
+    "applying": "Applying...",
+    "lowOnly": "Low stock only",
+    "all": "All"
+  },
+  "shopStock": {
+    "title": "Your shop stock",
+    "subtitle": "Pieces you have in your shop, by size. Sets are split into pairs on delivery.",
+    "empty": "No stock yet. Your stock fills up when Himova delivers your orders.",
+    "reorder": "Re-order from Himova",
+    "product": "Product",
+    "variant": "Variant",
+    "size": "Size",
+    "pieces": "Pieces",
+    "lowAlert": "Running low",
+    "browseCatalog": "Browse catalog"
   }
 }

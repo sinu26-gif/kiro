@@ -7,7 +7,10 @@ import { z } from "zod";
 import { requireRole } from "@/lib/auth/session";
 import { loadCart } from "@/lib/cart";
 import { getCurrentShopkeeperId } from "@/lib/catalog";
+import { applyDeliveryStockIn, applyShipmentStockOut } from "@/lib/stock";
 import { getSupabaseServerClient, getSupabaseAdminClient } from "@/lib/supabase/server";
+
+type OrderStatusValue = "pending" | "packed" | "shipped" | "delivered" | "cancelled";
 
 export type PlaceOrderState = {
   ok: boolean;
@@ -155,7 +158,7 @@ export async function updateOrderStatus(
   _prev: PlaceOrderState | null,
   formData: FormData
 ): Promise<PlaceOrderState> {
-  await requireRole(["admin"]);
+  const actor = await requireRole(["admin"]);
 
   const parsed = updateStatusSchema.safeParse({
     orderId: formData.get("orderId"),
@@ -172,18 +175,34 @@ export async function updateOrderStatus(
     .maybeSingle();
   if (!order) return { ok: false, error: "Order not found." };
 
+  const previousStatus = order.status as OrderStatusValue;
+  const nextStatus = parsed.data.status as OrderStatusValue;
+
   const stamp: Record<string, string> = {};
   const now = new Date().toISOString();
-  if (parsed.data.status === "packed") stamp.packed_at = now;
-  if (parsed.data.status === "shipped") stamp.shipped_at = now;
-  if (parsed.data.status === "delivered") stamp.delivered_at = now;
-  if (parsed.data.status === "cancelled") stamp.cancelled_at = now;
+  if (nextStatus === "packed") stamp.packed_at = now;
+  if (nextStatus === "shipped") stamp.shipped_at = now;
+  if (nextStatus === "delivered") stamp.delivered_at = now;
+  if (nextStatus === "cancelled") stamp.cancelled_at = now;
 
   const { error } = await admin
     .from("orders")
-    .update({ status: parsed.data.status, ...stamp })
+    .update({ status: nextStatus, ...stamp })
     .eq("id", parsed.data.orderId);
   if (error) return { ok: false, error: error.message };
+
+  // Stock side effects — only when actually transitioning INTO the status,
+  // so re-runs can't double-apply.
+  try {
+    if (nextStatus === "shipped" && previousStatus !== "shipped") {
+      await applyShipmentStockOut(order.id, actor.id);
+    }
+    if (nextStatus === "delivered" && previousStatus !== "delivered") {
+      await applyDeliveryStockIn(order.id, order.shopkeeper_id as string, actor.id);
+    }
+  } catch {
+    // Stock errors should not strand the status change; surfaced via logs.
+  }
 
   // Notify the shopkeeper of the status change.
   try {
@@ -196,8 +215,8 @@ export async function updateOrderStatus(
       await admin.from("notifications").insert({
         recipient_profile_id: shop.profile_id,
         category: "order",
-        title: `Order ${parsed.data.status}`,
-        body: `Your order is now ${parsed.data.status}.`,
+        title: `Order ${nextStatus}`,
+        body: `Your order is now ${nextStatus}.`,
         link: `/shop/orders/${order.id}`,
       });
     }
