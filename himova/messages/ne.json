@@ -1,0 +1,126 @@
+{
+  "common": {
+    "appName": "हिमोवा",
+    "loading": "लोड हुँदैछ...",
+    "error": "केहि गलत भयो",
+    "save": "सुरक्षित गर्नुहोस्",
+    "cancel": "रद्द गर्नुहोस्",
+    "delete": "मेटाउनुहोस्",
+    "edit": "सम्पादन",
+    "search": "खोज्नुहोस्...",
+    "noResults": "कुनै परिणाम फेला परेन",
+    "perPiece": "प्रति जोडी",
+    "sets": "सेटहरू",
+    "addToCart": "कार्टमा थप्नुहोस्",
+    "reorder": "पुन: अर्डर",
+    "viewAll": "सबै हेर्नुहोस्",
+    "back": "पछाडि"
+  },
+  "auth": {
+    "login": "लग इन",
+    "logout": "लग आउट",
+    "phone": "फोन नम्बर",
+    "password": "पासवर्ड",
+    "email": "इमेल",
+    "changePassword": "पासवर्ड परिवर्तन",
+    "verifyOtp": "OTP प्रमाणित गर्नुहोस्",
+    "enterOtp": "तपाईको फोनमा पठाइएको कोड प्रविष्ट गर्नुहोस्",
+    "loginTitle": "स्वागत छ",
+    "loginSubtitle": "जारी राख्न आफ्नो फोन नम्बर प्रविष्ट गर्नुहोस्"
+  },
+  "home": {
+    "title": "गृहपृष्ठ",
+    "newArrivals": "नयाँ आएका",
+    "newArrivalsDesc": "नयाँ के छ हेर्नुहोस्",
+    "bestSellers": "सबैभन्दा बढी बिक्री",
+    "bestSellersDesc": "सबै पसलहरूमा लोकप्रिय",
+    "previousOrders": "तपाईका अघिल्ला अर्डरहरू",
+    "previousOrdersDesc": "छिटो पुन: अर्डर गर्नुहोस्",
+    "searchPlaceholder": "उत्पादनहरू खोज्नुहोस्...",
+    "newItems": "नयाँ वस्तुहरू",
+    "setsSold": "सेटहरू बिक्री"
+  },
+  "catalog": {
+    "title": "क्याटलग",
+    "filterByPrice": "मूल्य अनुसार फिल्टर",
+    "filterByAvailability": "उपलब्धता",
+    "inStock": "स्टकमा छ",
+    "outOfStock": "स्टक सकियो"
+  },
+  "product": {
+    "addToCart": "कार्टमा थप्नुहोस्",
+    "selectVariant": "रंग छान्नुहोस्",
+    "selectSetType": "सेट प्रकार छान्नुहोस्",
+    "quantity": "सेटहरूको संख्या",
+    "confirmAdd": "{quantity} सेट × रु {price} प्रति जोडी = रु {total} जम्मा",
+    "description": "विवरण",
+    "video": "भिडियो हेर्नुहोस्"
+  },
+  "cart": {
+    "title": "कार्ट",
+    "empty": "तपाईको कार्ट खाली छ",
+    "subtotal": "उपजम्मा",
+    "discount": "छुट",
+    "total": "जम्मा",
+    "checkout": "चेकआउट गर्नुहोस्",
+    "remove": "हटाउनुहोस्",
+    "perPiece": "प्रति जोडी",
+    "lineTotalLabel": "{sets} सेट × रु {price}"
+  },
+  "checkout": {
+    "title": "चेकआउट",
+    "paymentMethod": "भुक्तानी विधि",
+    "cod": "डेलिभरीमा नगद",
+    "bank": "बैंक ट्रान्सफर",
+    "esewa": "इसेवा",
+    "khalti": "खल्ती",
+    "placeOrder": "अर्डर गर्नुहोस्",
+    "estimatedDelivery": "अनुमानित डेलिभरी: {days} दिन"
+  },
+  "orders": {
+    "title": "अर्डरहरू",
+    "status": {
+      "pending": "पेन्डिङ",
+      "packed": "प्याक गरिएको",
+      "shipped": "पठाइएको",
+      "delivered": "डेलिभर भयो",
+      "cancelled": "रद्द गरियो"
+    },
+    "orderNumber": "अर्डर #{id}",
+    "placedOn": "{date} मा राखिएको",
+    "trackOrder": "अर्डर ट्र्याक गर्नुहोस्"
+  },
+  "stock": {
+    "title": "मेरो स्टक",
+    "lowStock": "कम स्टक",
+    "inStock": "स्टकमा",
+    "reorderFromHimova": "हिमोवाबाट पुन: अर्डर गर्नुहोस्",
+    "pieces": "टुक्राहरू"
+  },
+  "pos": {
+    "title": "बिक्री केन्द्र",
+    "newSale": "नयाँ बिक्री",
+    "completeSale": "बिक्री पूरा गर्नुहोस्",
+    "closeDay": "दिन बन्द गर्नुहोस्",
+    "receipt": "रसिद"
+  },
+  "leaderboard": {
+    "title": "लिडरबोर्ड",
+    "totalNpr": "कुल रुपैयाँ",
+    "totalSets": "कुल सेट",
+    "last30Days": "गत ३० दिन",
+    "rank": "र्‍यांक"
+  },
+  "settings": {
+    "title": "सेटिङ",
+    "language": "भाषा",
+    "english": "English",
+    "nepali": "नेपाली"
+  },
+  "reports": {
+    "title": "रिपोर्टहरू",
+    "dailySales": "दैनिक बिक्री",
+    "weeklySales": "साप्ताहिक बिक्री",
+    "monthlySales": "मासिक बिक्री"
+  }
+}

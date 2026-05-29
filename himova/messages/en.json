@@ -1,0 +1,126 @@
+{
+  "common": {
+    "appName": "Himova",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search...",
+    "noResults": "No results found",
+    "perPiece": "per piece",
+    "sets": "sets",
+    "addToCart": "Add to Cart",
+    "reorder": "Reorder",
+    "viewAll": "View All",
+    "back": "Back"
+  },
+  "auth": {
+    "login": "Log In",
+    "logout": "Log Out",
+    "phone": "Phone Number",
+    "password": "Password",
+    "email": "Email",
+    "changePassword": "Change Password",
+    "verifyOtp": "Verify OTP",
+    "enterOtp": "Enter the code sent to your phone",
+    "loginTitle": "Welcome back",
+    "loginSubtitle": "Enter your phone number to continue"
+  },
+  "home": {
+    "title": "Home",
+    "newArrivals": "New Arrivals",
+    "newArrivalsDesc": "See what's new",
+    "bestSellers": "Best Sellers",
+    "bestSellersDesc": "Most popular across all shops",
+    "previousOrders": "Your Previous Orders",
+    "previousOrdersDesc": "Reorder quickly",
+    "searchPlaceholder": "Search products...",
+    "newItems": "new items",
+    "setsSold": "sets sold"
+  },
+  "catalog": {
+    "title": "Catalog",
+    "filterByPrice": "Filter by price",
+    "filterByAvailability": "Availability",
+    "inStock": "In Stock",
+    "outOfStock": "Out of Stock"
+  },
+  "product": {
+    "addToCart": "Add to Cart",
+    "selectVariant": "Select Color",
+    "selectSetType": "Select Set Type",
+    "quantity": "Number of Sets",
+    "confirmAdd": "{quantity} sets × Rs {price} per piece = Rs {total} total",
+    "description": "Description",
+    "video": "Watch Video"
+  },
+  "cart": {
+    "title": "Cart",
+    "empty": "Your cart is empty",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "total": "Total",
+    "checkout": "Proceed to Checkout",
+    "remove": "Remove",
+    "perPiece": "per piece",
+    "lineTotalLabel": "{sets} sets × Rs {price}"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "paymentMethod": "Payment Method",
+    "cod": "Cash on Delivery",
+    "bank": "Bank Transfer",
+    "esewa": "eSewa",
+    "khalti": "Khalti",
+    "placeOrder": "Place Order",
+    "estimatedDelivery": "Estimated delivery: {days} days"
+  },
+  "orders": {
+    "title": "Orders",
+    "status": {
+      "pending": "Pending",
+      "packed": "Packed",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "orderNumber": "Order #{id}",
+    "placedOn": "Placed on {date}",
+    "trackOrder": "Track Order"
+  },
+  "stock": {
+    "title": "My Stock",
+    "lowStock": "Low Stock",
+    "inStock": "In Stock",
+    "reorderFromHimova": "Reorder from Himova",
+    "pieces": "pieces"
+  },
+  "pos": {
+    "title": "Point of Sale",
+    "newSale": "New Sale",
+    "completeSale": "Complete Sale",
+    "closeDay": "Close Day",
+    "receipt": "Receipt"
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "totalNpr": "Total NPR",
+    "totalSets": "Total Sets",
+    "last30Days": "Last 30 Days",
+    "rank": "Rank"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "english": "English",
+    "nepali": "नेपाली"
+  },
+  "reports": {
+    "title": "Reports",
+    "dailySales": "Daily Sales",
+    "weeklySales": "Weekly Sales",
+    "monthlySales": "Monthly Sales"
+  }
+}
