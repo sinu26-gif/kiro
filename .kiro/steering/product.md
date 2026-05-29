@@ -27,8 +27,18 @@ Phase 1 has exactly **one wholesaler**: Himova. Do NOT build multi-tenant market
 - Shopkeepers must order in whole sets — they cannot order single pairs from Himova.
 - Customers walking into a shopkeeper's shop can buy **single pieces**.
 
+### Shopkeeper Types
+- Every shopkeeper is assigned a **type**: `shoes` or `clothes`.
+- This type is set by the admin when creating the shopkeeper account (or from the registration form request).
+- A `shoes` shopkeeper only sees products in the Shoes category.
+- A `clothes` shopkeeper only sees products in the Clothing category.
+- This filtering is enforced server-side — not just hidden in the UI.
+- Admin can change a shopkeeper's type at any time from their profile.
+
 ### Pricing
 - Each set type has a fixed price set by the admin.
+- **Display price:** Product cards and detail pages show the price of **one single shoe/piece** with a product photo — NOT the full set price.
+- **Checkout price:** At checkout, the displayed per-piece price is multiplied by the number of sets being ordered. The shopkeeper selects how many sets to order; the total = per-piece price × number of sets.
 - Admin can manually override the price for a specific shopkeeper (shown transparently with badge/discount label).
 - Admin can suggest an MRP/retail price; shopkeeper can override in their own POS.
 - **VAT is excluded** from all pricing and bills.
@@ -45,6 +55,18 @@ Phase 1 has exactly **one wholesaler**: Himova. Do NOT build multi-tenant market
 - Order status flow: `Pending -> Packed -> Shipped -> Delivered`.
 - Admin can mark each order as **Free Delivery** manually.
 - Payment options: **Cash on Delivery, Bank Transfer, eSewa, Khalti**. No credit, no instalments — full payment only.
+
+### Shopkeeper Home Page (Hub with Sub-Pages)
+The shopkeeper home page is NOT a single scrollable page with all sections. It is a **hub** with navigation cards that lead to separate sub-pages:
+
+1. **New Arrivals** — Products added in the last 30 days, filtered by shopkeeper's assigned category.
+2. **Best Sellers** — Products with the highest total sets sold across **ALL shopkeepers combined** (not just the current one). This is an aggregate ranking. There is NO "Recommended for You" section — best sellers are purely data-driven from total sales volume.
+3. **Your Previous Orders** — Products that **this specific shopkeeper** has ordered before. Sorted by most recently ordered. Includes a "Reorder" button for quick repeat ordering.
+
+**Key distinctions:**
+- "Best Sellers" = most sold across all shopkeepers (aggregate). If a shoe has 500 sets sold total across 50 shopkeepers, it's a best seller.
+- "Previous Orders" = only what this individual shopkeeper has ordered (personal history).
+- There is NO "Recommended for You" anywhere. The algorithm is simple: best sellers = highest total sales volume.
 
 ### POS (Shopkeeper -> Customer)
 - Search products by name OR tap a photo.

@@ -30,8 +30,22 @@ This document defines the user stories and acceptance criteria for Phase 1. Anyt
 
 **Acceptance:**
 - Shopkeepers cannot self-register.
-- Admin enters: shop name, owner name, phone, address, location pin (Google Maps), optional logo.
+- Admin enters: shop name, owner name, phone, address, location pin (Google Maps), optional logo, **shopkeeper type** (`shoes` | `clothes`).
+- **Shopkeeper type** determines which product category the shopkeeper can browse and order:
+  - `shoes` → only sees products in the Shoes category.
+  - `clothes` → only sees products in the Clothing category.
+- Admin can change the shopkeeper type later from the shopkeeper profile.
 - Shopkeeper receives a WhatsApp message with login instructions.
+
+### 1.4 Shopkeeper self-registration form
+**As a** potential shopkeeper, **I want** to submit a registration request, **so that** the admin can review and approve my account.
+
+**Acceptance:**
+- A public registration form is accessible (no login required).
+- Form fields: shop name, owner name, phone, address, **shopkeeper type** (`shoes` | `clothes`).
+- Submitting the form does NOT create an active account — it creates a pending request visible to the admin.
+- Admin reviews the request and either approves (creating the account with the selected type) or rejects it.
+- The shopkeeper type selected in the form pre-fills the admin's creation form but admin can override it.
 
 ---
 
@@ -58,19 +72,38 @@ This document defines the user stories and acceptance criteria for Phase 1. Anyt
 
 ## 3. Catalog Browsing (Shopkeeper)
 
+### 3.0 Category-filtered catalog
+**As a** shopkeeper, **I want** to only see products in my assigned category, **so that** I don't get confused by irrelevant products.
+
+**Acceptance:**
+- If shopkeeper type is `shoes`, the catalog, home page, search, and filters only show Shoes category products.
+- If shopkeeper type is `clothes`, only Clothing category products are shown.
+- This filter is enforced server-side (RLS or query-level) — not just a UI filter.
+- Admin can view all products regardless.
+
 ### 3.1 Home page
 **As a** shopkeeper, **I want** a curated home page, **so that** I can quickly find what to order.
 
 **Acceptance:**
-- Sections shown in order: New Arrivals, Best Sellers, Recommended for You, Your Previous Orders.
-- Each card shows photo, name, price, and an "Add to cart" button.
+- Home page acts as a hub with navigation to separate sub-pages (all within the home route).
+- Sub-pages accessible from home:
+  - **New Arrivals** — latest products added in the shopkeeper's assigned category.
+  - **Best Sellers** — products with the highest total sets sold across ALL shopkeepers (not just the current one). Does NOT include "Recommended for You" — this is purely based on aggregate sales data.
+  - **Your Previous Orders** — items that this individual shopkeeper has ordered before (for easy reordering).
+- Each card shows: one product photo, product name, price per single shoe/piece, and an "Add to cart" button.
+- All sub-pages only show products matching the shopkeeper's assigned category (shoes or clothes).
 
 ### 3.2 Product detail
-- Shows all photos in a swipeable gallery.
+- Shows **one primary product photo** prominently (hero image).
+- Additional photos in a swipeable gallery below.
 - Embedded YouTube video if URL provided.
 - Variant selector (colour swatches).
-- Set type selector with prices.
-- "Add to cart" with quantity selector (number of sets).
+- Set type selector.
+- **Price displayed = price per single shoe/piece** (not the full set price).
+  - Example: If a set of 5 shoes (39-43) costs Rs 5,000, display shows "Rs 1,000" (per shoe).
+  - A subtle label below the price says "per piece" or "प्रति जोडी".
+- "Add to cart" with quantity selector (number of **sets**).
+- When adding to cart, the UI shows: "X sets × Rs Y per piece = Rs Z total" as a confirmation.
 
 ### 3.3 Search and filter
 - Search by product name.
@@ -82,13 +115,15 @@ This document defines the user stories and acceptance criteria for Phase 1. Anyt
 
 ### 4.1 Cart
 **Acceptance:**
-- View, edit quantities, remove items.
-- Cart shows subtotal, applicable discount (if any manual override exists), total.
+- View, edit quantities (number of sets), remove items.
+- Each line item shows: product photo, name, variant, set type, **per-piece price**, number of sets, **line total** (per-piece price × number of sets).
+- Cart shows subtotal (sum of all line totals), applicable discount (if any manual override exists), total.
 - Persists across sessions (server-side cart per shopkeeper).
 
 ### 4.2 Place order
 - Select branch (if shopkeeper has multiple) — **[P2]**, Phase 1 has single-branch only.
 - Select payment method: COD, Bank Transfer, eSewa, Khalti.
+- **Order total calculation:** For each item: per-piece price × number of sets = line total. Sum of all line totals = order total.
 - Order placed with status `Pending`.
 - Shopkeeper sees an estimated delivery date (admin-configurable, default 3 days).
 - Admin receives in-app + WhatsApp notification immediately.
