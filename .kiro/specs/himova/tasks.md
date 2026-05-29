@@ -25,13 +25,14 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 
 ## Milestone 2 — Schema & RLS
 - [ ] **2.1** Migration: `categories`, `products`, `product_photos`, `product_variants`, `set_types`. _(Design 3.3-3.7)_
-- [ ] **2.2** Migration: `shopkeepers`, `shopkeeper_pricing`. _(Design 3.2, 3.8)_
-- [ ] **2.3** Migration: `orders`, `order_items`. _(Design 3.9-3.10)_
-- [ ] **2.4** Migration: `shop_stock`, `stock_movements`. _(Design 3.11-3.12)_
-- [ ] **2.5** Migration: `pos_sales`, `pos_sale_items`, `pos_payments`, `shop_customers`, `custom_products`. _(Design 3.13-3.17)_
-- [ ] **2.6** Migration: `notifications`, `rewards`, `app_events`. _(Design 3.18-3.19)_
-- [ ] **2.7** RLS policies on every shopkeeper-scoped table. _(Design 9)_
-- [ ] **2.8** Seed script: 1 admin, 3 sample shopkeepers, 5 products with variants and set types. _(QA)_
+- [ ] **2.2** Migration: `shopkeepers` (includes `shopkeeper_type` column: `shoes | clothes`), `shopkeeper_pricing`. _(Design 3.2, 3.8)_
+- [ ] **2.3** Migration: `registration_requests` table for pending shopkeeper sign-up requests (shop_name, owner_name, phone, address, shopkeeper_type, status: pending|approved|rejected, reviewed_at, reviewed_by). _(Req 1.4)_
+- [ ] **2.4** Migration: `orders`, `order_items`. _(Design 3.9-3.10)_
+- [ ] **2.5** Migration: `shop_stock`, `stock_movements`. _(Design 3.11-3.12)_
+- [ ] **2.6** Migration: `pos_sales`, `pos_sale_items`, `pos_payments`, `shop_customers`, `custom_products`. _(Design 3.13-3.17)_
+- [ ] **2.7** Migration: `notifications`, `rewards`, `app_events`. _(Design 3.18-3.19)_
+- [ ] **2.8** RLS policies on every shopkeeper-scoped table. Include category-filtering policy: shopkeepers can only query products where `products.category_id` matches a category corresponding to their `shopkeeper_type`. _(Design 9, Req 3.0)_
+- [ ] **2.9** Seed script: 1 admin, 3 sample shopkeepers (2 shoes, 1 clothes), 5 products (3 shoes, 2 clothes) with variants and set types. _(QA)_
 
 ## Milestone 3 — Admin: Products
 - [ ] **3.1** Product list page with search and category filter. _(Req 2.2)_
@@ -41,21 +42,27 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 - [ ] **3.5** Archive/restore product. _(Req 2.2)_
 
 ## Milestone 4 — Admin: Shopkeepers
-- [ ] **4.1** Shopkeeper list with search and filters. _(Req 1.3)_
-- [ ] **4.2** Create shopkeeper form (shop name, owner name, phone, address, location pin via Google Maps embed, logo upload). _(Req 1.3)_
-- [ ] **4.3** Shopkeeper profile page (their orders, stock, leaderboard rank, manual price overrides). _(Req 8.4)_
+- [ ] **4.1** Shopkeeper list with search and filters (including filter by shopkeeper_type). _(Req 1.3)_
+- [ ] **4.2** Create shopkeeper form (shop name, owner name, phone, address, location pin via Google Maps embed, logo upload, **shopkeeper_type** selector: shoes | clothes). _(Req 1.3)_
+- [ ] **4.3** Shopkeeper profile page (their orders, stock, leaderboard rank, manual price overrides, shopkeeper_type badge). _(Req 8.4)_
 - [ ] **4.4** Trigger welcome WhatsApp on creation. _(Req 1.3)_
+- [ ] **4.5** Public shopkeeper registration request form (shop name, owner name, phone, address, shopkeeper_type). Creates a pending request for admin review. _(Req 1.4)_
+- [ ] **4.6** Admin review pending registration requests: approve (creates account) or reject. _(Req 1.4)_
 
 ## Milestone 5 — Shopkeeper: Catalog & Cart
-- [ ] **5.1** Home page with curated sections (New Arrivals, Best Sellers, Recommended, Previous Orders). _(Req 3.1)_
-- [ ] **5.2** Product detail page (gallery, video embed, variants, set types). _(Req 3.2)_
-- [ ] **5.3** Search and category/price filters. _(Req 3.3)_
-- [ ] **5.4** Server-side cart (add, update qty, remove). _(Req 4.1)_
-- [ ] **5.5** Apply `shopkeeper_pricing` overrides to cart with badge showing the discount reason. _(Req 4.1)_
+- [ ] **5.1** Home hub page with navigation cards to sub-pages (New Arrivals, Best Sellers, Previous Orders). _(Req 3.1, Design 5a.1)_
+- [ ] **5.2** New Arrivals sub-page (`/home/new-arrivals`) — products from last 30 days, filtered by shopkeeper_type category. _(Req 3.1, Design 5a.2)_
+- [ ] **5.3** Best Sellers sub-page (`/home/best-sellers`) — products ranked by total sets sold across ALL shopkeepers, filtered by shopkeeper_type. No "Recommended for You". _(Req 3.1, Design 5a.3)_
+- [ ] **5.4** Previous Orders sub-page (`/home/previous-orders`) — products this individual shopkeeper has ordered before, with "Reorder" button. _(Req 3.1, Design 5a.4)_
+- [ ] **5.5** Product detail page (hero photo, per-piece display price, gallery, video embed, variants, set types, add-to-cart with set qty). _(Req 3.2)_
+- [ ] **5.6** Category-filtered catalog: server-side enforcement that shopkeeper only sees products matching their shopkeeper_type. _(Req 3.0)_
+- [ ] **5.7** Search and category/price filters (within the allowed category). _(Req 3.3)_
+- [ ] **5.8** Server-side cart (add, update qty, remove). _(Req 4.1)_
+- [ ] **5.9** Cart UI: show per-piece price, set quantity, line total (per-piece × sets). Apply `shopkeeper_pricing` overrides with badge. _(Req 4.1)_
 
 ## Milestone 6 — Ordering Flow
-- [ ] **6.1** Checkout page with payment method selector. _(Req 4.2)_
-- [ ] **6.2** Place-order server action (transactional). _(Design 4.1)_
+- [ ] **6.1** Checkout page: shows per-piece display price × sets = line total for each item; payment method selector. _(Req 4.2)_
+- [ ] **6.2** Place-order server action (transactional): calculates totals using full set price (`price_paisa × set_quantity`), validates stock, creates order + items. _(Design 4.1)_
 - [ ] **6.3** Order list and detail for shopkeeper with status tracker. _(Req 4.3)_
 - [ ] **6.4** Admin order list with filters. _(Req 5.1)_
 - [ ] **6.5** Admin order detail: status updates, free-delivery toggle, payment confirmation. _(Req 5.2, Design 4.2-4.3)_

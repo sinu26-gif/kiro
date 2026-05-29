@@ -77,6 +77,7 @@ Mirrors `auth.users`. One row per authenticated user.
 | location_lat | numeric | |
 | location_lng | numeric | |
 | logo_url | text | |
+| shopkeeper_type | text | `'shoes' | 'clothes'` — determines which product category is visible |
 | status | text | `active | suspended` |
 | created_at | timestamptz | |
 
@@ -127,9 +128,14 @@ A set_type defines the size combination + price + stock for a variant.
 | variant_id | uuid (FK) | |
 | label | text | e.g., "39-43", "S-M-L-XL-XXL" |
 | sizes | text[] | array of size labels in pack order |
-| price_paisa | int | |
+| price_paisa | int | **full set price** (used for checkout calculation) |
 | warehouse_stock | int | sets currently in warehouse |
 | reorder_threshold | int | low-stock alert level |
+
+**Pricing display logic (computed, not stored):**
+- `display_price_paisa = price_paisa / array_length(sizes)` → price per single shoe/piece shown to shopkeeper on product cards and detail page.
+- At checkout: `line_total = price_paisa × set_quantity` (full set price × number of sets).
+- The per-piece price is for **display only** — the actual billing is always at the set level.
 
 Constraint: `array_length(sizes, 1) = 5` for shoes; for clothing the array length matches the label.
 Constraint: `unique(sizes per variant_id)` — no two set_types in the same variant share the same size combo.
@@ -287,6 +293,24 @@ Products a shopkeeper added themselves (not bought from Himova).
 | created_by | uuid (FK -> profiles) | |
 | created_at | timestamptz | |
 
+### 3.20 `registration_requests`
+Pending shopkeeper sign-up requests submitted via the public form. Admin reviews and approves/rejects.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid (PK) | |
+| shop_name | text | |
+| owner_name | text | |
+| phone | text | |
+| address | text | |
+| shopkeeper_type | text | `'shoes' | 'clothes'` |
+| status | text | `'pending' | 'approved' | 'rejected'` |
+| reviewed_by | uuid (nullable, FK -> profiles) | admin who reviewed |
+| reviewed_at | timestamptz (nullable) | |
+| rejection_reason | text (nullable) | |
+| created_shopkeeper_id | uuid (nullable, FK -> shopkeepers) | set on approval |
+| created_at | timestamptz | |
+
 ---
 
 ## 4. Key Server Operations (Transactions)
@@ -294,9 +318,12 @@ Products a shopkeeper added themselves (not bought from Himova).
 ### 4.1 Place order (shopkeeper)
 1. Validate cart against current `set_types.warehouse_stock`.
 2. Apply `shopkeeper_pricing` overrides per item.
-3. Create `orders` + `order_items` rows.
-4. (No stock change yet — happens on Shipped.)
-5. Insert in-app notification + queue WhatsApp message to admin.
+3. **Calculate totals:**
+   - For each item: `line_total = set_types.price_paisa × set_quantity`.
+   - (Note: the display_price shown to the shopkeeper is `price_paisa / array_length(sizes)` i.e., per piece, but billing uses the full set price.)
+4. Create `orders` + `order_items` rows with `unit_price_paisa = set_types.price_paisa` (full set price snapshot).
+5. (No stock change yet — happens on Shipped.)
+6. Insert in-app notification + queue WhatsApp message to admin.
 
 ### 4.2 Mark order Shipped (admin)
 1. Update `orders.status = 'shipped'`, `shipped_at = now()`.
@@ -326,11 +353,14 @@ All four operations run in a Postgres transaction (Supabase RPC) to guarantee at
 ### 5.1 Shopkeeper (mobile-first)
 - **Login** — phone + password.
 - **OTP verify** (first login only).
-- **Home** — sections: New Arrivals, Best Sellers, Recommended, Previous Orders.
-- **Catalog** — grid + search + filters.
-- **Product detail** — gallery, video, variants, set types, add-to-cart.
-- **Cart** — items, qty, total, checkout.
-- **Checkout** — payment method, place order.
+- **Home** — hub page with navigation to sub-pages:
+  - **New Arrivals** (sub-page) — latest products in shopkeeper's category.
+  - **Best Sellers** (sub-page) — products most sold across ALL shopkeepers (aggregate, not individual). No "Recommended for You" section here.
+  - **Your Previous Orders** (sub-page) — products this individual shopkeeper ordered before (for easy reorder).
+- **Catalog** — grid + search + filters (auto-filtered by shopkeeper_type category).
+- **Product detail** — single product photo prominently displayed, price shown per single shoe/piece, variants, set types, add-to-cart with set quantity (checkout multiplies price × sets).
+- **Cart** — items, qty (sets), total (price × sets), checkout.
+- **Checkout** — payment method, place order. Total = per-shoe/piece price × number of sets.
 - **Orders** — list + detail with status tracker.
 - **Stock** — sizes per product, low-stock badges, reorder CTA.
 - **POS** — search/grid -> selector -> sale -> payment -> receipt.
@@ -342,13 +372,63 @@ All four operations run in a Postgres transaction (Supabase RPC) to guarantee at
 ### 5.2 Admin (desktop-first)
 - **Dashboard** — KPIs, charts: orders today, revenue this month, low-stock count, top shopkeepers.
 - **Products** — list, create, edit, archive.
-- **Shopkeepers** — list, create, edit, view profile (with their order history + stock + ranking).
+- **Shopkeepers** — list, create, edit, view profile (with their order history + stock + ranking). Create/edit includes **shopkeeper_type** selector (`shoes` | `clothes`).
 - **Orders** — list with filters, detail with status update + free-delivery toggle + payment confirm.
 - **Stock** — warehouse view, low-stock alerts, manual restock.
 - **Leaderboard** — admin private view + reward cycle UI.
 - **Reports** — all admin reports + Excel/PDF export.
 - **Notifications** — bell icon, history.
 - **Settings** — user management (Phase 2: sub-admins).
+
+---
+
+## 5a. Shopkeeper Home — Sub-Page Architecture
+
+The shopkeeper Home page is a **hub** with distinct sub-pages, each accessible via navigation cards/tabs on the home landing. All sub-pages are nested routes under `(shop)/home/`.
+
+### Route structure:
+```
+app/(shop)/home/
+├── page.tsx             # Hub: shows navigation cards to each sub-page
+├── new-arrivals/
+│   └── page.tsx         # New Arrivals sub-page
+├── best-sellers/
+│   └── page.tsx         # Best Sellers sub-page
+└── previous-orders/
+    └── page.tsx         # Your Previous Orders sub-page
+```
+
+### 5a.1 Home Hub (`/home`)
+- Displays 3 navigation cards (large, tappable, with icons/illustrations):
+  1. **New Arrivals** — "See what's new" with a preview count (e.g., "12 new items")
+  2. **Best Sellers** — "Most popular across all shops" with a preview of top 3 product thumbnails
+  3. **Your Previous Orders** — "Reorder quickly" with count of unique products ordered before
+- Each card navigates to the corresponding sub-page.
+- Below the cards: a quick-access search bar that links to the full catalog.
+
+### 5a.2 New Arrivals (`/home/new-arrivals`)
+- Shows products added in the last 30 days (configurable by admin).
+- **Filtered by shopkeeper_type:** shoes shopkeeper sees only new shoes, clothes shopkeeper sees only new clothes.
+- Sorted by `created_at` descending (newest first).
+- Each card: product photo, name, per-piece display price, "Add to cart" button.
+- Pagination or infinite scroll for large lists.
+
+### 5a.3 Best Sellers (`/home/best-sellers`)
+- Shows products ranked by **total sets sold across ALL shopkeepers** (aggregate sales data).
+- **NOT** "Recommended for You" — there is no personalized recommendation here.
+- **Filtered by shopkeeper_type:** shoes shopkeeper sees best-selling shoes only; clothes shopkeeper sees best-selling clothes only.
+- Data source: `SUM(order_items.set_quantity)` grouped by product, joined through `set_types → product_variants → products`, filtered by category matching shopkeeper_type.
+- Only includes orders with status `delivered` (confirmed sales, not pending/cancelled).
+- Each card: product photo, name, per-piece display price, total sets sold badge (e.g., "🔥 250 sets sold"), "Add to cart" button.
+- Top 20 products shown by default; "See more" loads additional.
+
+### 5a.4 Your Previous Orders (`/home/previous-orders`)
+- Shows products that **this individual shopkeeper** has ordered before.
+- Sorted by most recently ordered first.
+- **Only shows products in the shopkeeper's assigned category** (shoes or clothes).
+- Data source: `order_items` joined to `orders` where `orders.shopkeeper_id = current_shopkeeper` and `orders.status != 'cancelled'`.
+- Each card: product photo, name, per-piece display price, last ordered date, quantity last ordered, "Reorder" button (pre-fills cart with same variant/set type/quantity).
+- If the shopkeeper has never ordered anything, shows an empty state: "You haven't ordered yet. Check out our Best Sellers!"
 
 ---
 
