@@ -1,10 +1,18 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
+import { isSupabaseConfigured } from '@/lib/supabase/config';
 
 const PUBLIC_PATHS = ['/login', '/admin/login', '/register', '/leaderboard'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Before Supabase is configured, allow all routes so the app can be
+  // previewed (pages render with mock data). Auth activates automatically
+  // once real Supabase credentials are set in the environment.
+  if (!isSupabaseConfigured()) {
+    return NextResponse.next();
+  }
 
   // Allow public paths without auth
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
