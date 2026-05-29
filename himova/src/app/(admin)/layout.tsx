@@ -14,6 +14,7 @@ import {
 import { LanguageToggle } from "@/components/shared/language-toggle";
 import { Logo } from "@/components/shared/logo";
 import { LogoutButton } from "@/components/shared/logout-button";
+import { NotificationBell } from "@/components/shared/notification-bell";
 import { PortalNav, type NavItem } from "@/components/shared/portal-nav";
 
 /**
@@ -45,6 +46,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
             <Logo size="md" />
           </Link>
           <div className="flex items-center gap-2">
+            <NotificationBell basePath="/admin" />
             <LanguageToggle />
             <LogoutButton />
           </div>

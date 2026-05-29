@@ -512,5 +512,11 @@
     "thankYou": "Thank you for your purchase!",
     "print": "Print",
     "backToPos": "Back to POS"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Order updates, stock alerts, leaderboard, and rewards.",
+    "empty": "No notifications yet.",
+    "markAllRead": "Mark all read"
   }
 }
