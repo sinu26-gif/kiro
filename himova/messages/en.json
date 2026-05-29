@@ -94,8 +94,23 @@
     },
     "status": {
       "active": "Active",
-      "suspended": "Suspended"
-    }
+      "suspended": "Suspended",
+      "pending": "Pending"
+    },
+    "pending": "Pending",
+    "filterAll": "All",
+    "filterPending": "Pending",
+    "filterActive": "Active",
+    "verify": "Verify",
+    "reject": "Reject",
+    "confirmReject": "Reject and delete this registration?",
+    "delete": "Delete shopkeeper",
+    "confirmDelete": "Permanently delete this shopkeeper and all their data?",
+    "viewDocument": "View document",
+    "noDocument": "No document uploaded",
+    "selfRegistered": "Self-registered",
+    "document": "Verification document",
+    "pendingCount": "{count} awaiting verification"
   },
   "products": {
     "title": "Products",
@@ -624,5 +639,42 @@
   "exports": {
     "excel": "Excel",
     "pdf": "Print / PDF"
+  },
+  "register": {
+    "title": "Register your shop",
+    "subtitle": "Create your account, upload one document, and start browsing right away. Ordering unlocks after we verify you.",
+    "shopName": "Shop name",
+    "shopNamePlaceholder": "e.g. Ram Shoe House",
+    "ownerName": "Owner name",
+    "ownerNamePlaceholder": "e.g. Ram Bahadur",
+    "phone": "Phone number",
+    "phonePlaceholder": "98XXXXXXXX",
+    "password": "Choose a password",
+    "passwordPlaceholder": "At least 6 characters",
+    "address": "Address (optional)",
+    "addressPlaceholder": "City, ward, locality",
+    "document": "Verification document",
+    "documentHint": "A photo of your citizenship, PAN, or shop licence. JPG, PNG, or PDF, up to 5MB.",
+    "submit": "Create account",
+    "submitting": "Creating account...",
+    "successTitle": "Registration received!",
+    "successBody": "You can log in now and browse the catalog. We'll verify your shop shortly — ordering unlocks once you're verified.",
+    "goToLogin": "Go to login",
+    "haveAccount": "Already have an account?",
+    "login": "Log in"
+  },
+  "verifyBanner": {
+    "pendingTitle": "Verification pending",
+    "pendingBody": "Your shop is under review. You can browse the catalog now. Ordering and POS unlock once an admin verifies your document.",
+    "suspendedTitle": "Account suspended",
+    "suspendedBody": "Your account is suspended. Please contact Himova.",
+    "requestCode": "Verify by code",
+    "step1": "Account created",
+    "step2": "Document under review",
+    "step3": "Verified — full access"
+  },
+  "loginExtra": {
+    "newHere": "New to Himova?",
+    "registerCta": "Register your shop"
   }
 }

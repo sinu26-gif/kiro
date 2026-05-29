@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { requireRole } from "@/lib/auth/session";
 import { getCurrentShopkeeperId } from "@/lib/catalog";
+import { isCurrentShopkeeperActive } from "@/lib/shopkeeper";
 import { normalisePhone } from "@/lib/auth/phone";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -68,6 +69,10 @@ export async function recordPosSale(payloadJson: string): Promise<PosSaleResult>
 
   const shopkeeperId = await getCurrentShopkeeperId();
   if (!shopkeeperId) return { ok: false, error: "Shopkeeper account not found." };
+
+  if (!(await isCurrentShopkeeperActive())) {
+    return { ok: false, error: "Your account is awaiting verification. POS unlocks once verified." };
+  }
 
   const supabase = getSupabaseServerClient();
   const { lines, payments } = parsed.data;

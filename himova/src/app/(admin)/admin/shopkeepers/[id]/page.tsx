@@ -16,7 +16,7 @@ import {
   type ExistingOverride,
   type PricingSetOption,
 } from "./pricing-manager";
-import { ShopkeeperStatusToggle } from "./status-toggle";
+import { ShopkeeperAdminActions } from "./admin-actions";
 
 export const metadata = { title: "Shopkeeper" };
 export const dynamic = "force-dynamic";
@@ -29,7 +29,9 @@ type ShopkeeperRow = {
   address: string | null;
   location_lat: number | null;
   location_lng: number | null;
-  status: "active" | "suspended";
+  status: "pending" | "active" | "suspended";
+  document_path: string | null;
+  self_registered: boolean;
 };
 
 type OrderRow = {
@@ -44,7 +46,9 @@ async function loadData(id: string) {
 
   const { data: shop } = await supabase
     .from("shopkeepers")
-    .select("id, shop_name, owner_name, phone, address, location_lat, location_lng, status")
+    .select(
+      "id, shop_name, owner_name, phone, address, location_lat, location_lng, status, document_path, self_registered"
+    )
     .eq("id", id)
     .maybeSingle();
   if (!shop) return null;
@@ -181,15 +185,15 @@ function DetailView({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{shop.shop_name}</h1>
-            {shop.status === "active" ? (
-              <Badge variant="success">{t("activate")}d</Badge>
-            ) : (
-              <Badge variant="warning">{t("suspend")}ed</Badge>
-            )}
+            <StatusBadge status={shop.status} />
           </div>
           <p className="text-sm text-muted-foreground">{shop.owner_name}</p>
         </div>
-        <ShopkeeperStatusToggle shopkeeperId={shop.id} status={shop.status} />
+        <ShopkeeperAdminActions
+          shopkeeperId={shop.id}
+          status={shop.status}
+          hasDocument={Boolean(shop.document_path)}
+        />
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
@@ -282,4 +286,11 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="text-right font-medium">{value}</span>
     </div>
   );
+}
+
+function StatusBadge({ status }: { status: "pending" | "active" | "suspended" }) {
+  const t = useTranslations("shopkeepers.status");
+  if (status === "active") return <Badge variant="success">{t("active")}</Badge>;
+  if (status === "pending") return <Badge variant="warning">{t("pending")}</Badge>;
+  return <Badge variant="muted">{t("suspended")}</Badge>;
 }

@@ -143,7 +143,10 @@ export type Database = {
           location_lat: number | null;
           location_lng: number | null;
           logo_url: string | null;
-          status: "active" | "suspended";
+          status: "pending" | "active" | "suspended";
+          document_path: string | null;
+          document_type: string | null;
+          self_registered: boolean;
           created_at: Timestamp;
           updated_at: Timestamp;
         };
@@ -157,7 +160,10 @@ export type Database = {
           location_lat?: number | null;
           location_lng?: number | null;
           logo_url?: string | null;
-          status?: "active" | "suspended";
+          status?: "pending" | "active" | "suspended";
+          document_path?: string | null;
+          document_type?: string | null;
+          self_registered?: boolean;
         };
         Update: Partial<Database["public"]["Tables"]["shopkeepers"]["Insert"]>;
         Relationships: [];

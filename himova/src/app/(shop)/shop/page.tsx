@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
+import { getShopkeeperContext, type ShopkeeperStatus } from "@/lib/shopkeeper";
+import { VerificationBanner } from "@/components/shop/verification-banner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata = { title: "Home" };
@@ -17,10 +19,17 @@ export const metadata = { title: "Home" };
 export default async function ShopHomePage() {
   const user = await requireRole(["shopkeeper"]);
   const greetingName = user.fullName ?? "Shopkeeper";
-  return <ShopHomeView name={greetingName} />;
+  let status: ShopkeeperStatus = "active";
+  try {
+    const ctx = await getShopkeeperContext();
+    if (ctx) status = ctx.status;
+  } catch {
+    status = "active";
+  }
+  return <ShopHomeView name={greetingName} status={status} />;
 }
 
-function ShopHomeView({ name }: { name: string }) {
+function ShopHomeView({ name, status }: { name: string; status: ShopkeeperStatus }) {
   const t = useTranslations("shopHome");
   const tNav = useTranslations("shopNav");
 
@@ -40,6 +49,8 @@ function ShopHomeView({ name }: { name: string }) {
 
   return (
     <div className="space-y-8">
+      <VerificationBanner status={status} />
+
       {/* Greeting hero */}
       <Card className="overflow-hidden border-2 bg-card">
         <div className="relative">

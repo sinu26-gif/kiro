@@ -1,6 +1,9 @@
 import { useTranslations } from "next-intl";
 
+import Link from "next/link";
+
 import { Logo } from "@/components/shared/logo";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -32,6 +35,7 @@ export default function LoginPage({
 
 function LoginPageView({ defaultTab }: { defaultTab: "shopkeeper" | "admin" }) {
   const t = useTranslations("auth");
+  const tx = useTranslations("loginExtra");
 
   return (
     <div className="relative">
@@ -64,6 +68,12 @@ function LoginPageView({ defaultTab }: { defaultTab: "shopkeeper" | "admin" }) {
               <p className="mt-6 text-center text-xs text-muted-foreground">
                 {t("needHelp")}
               </p>
+              <div className="mt-4 rounded-lg border bg-accent/40 p-3 text-center">
+                <p className="text-sm text-muted-foreground">{tx("newHere")}</p>
+                <Button asChild variant="outline" size="sm" className="mt-2">
+                  <Link href="/register">{tx("registerCta")}</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

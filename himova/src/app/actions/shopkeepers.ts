@@ -179,3 +179,113 @@ export async function updateShopkeeperStatus(
   revalidatePath("/admin/shopkeepers");
   return { ok: true };
 }
+
+// ---------------------------------------------------------------------------
+// Verify a pending (self-registered) shopkeeper -> active + notify them.
+// ---------------------------------------------------------------------------
+const verifySchema = z.object({ shopkeeperId: z.string().uuid() });
+
+export async function verifyShopkeeper(
+  _prev: ShopkeeperActionState | null,
+  formData: FormData
+): Promise<ShopkeeperActionState> {
+  await requireRole(["admin"]);
+  const parsed = verifySchema.safeParse({ shopkeeperId: formData.get("shopkeeperId") });
+  if (!parsed.success) return { ok: false, error: "Invalid input." };
+
+  const admin = getSupabaseAdminClient();
+  const { data: shop } = await admin
+    .from("shopkeepers")
+    .select("profile_id, shop_name")
+    .eq("id", parsed.data.shopkeeperId)
+    .maybeSingle();
+
+  const { error } = await admin
+    .from("shopkeepers")
+    .update({ status: "active" })
+    .eq("id", parsed.data.shopkeeperId);
+  if (error) return { ok: false, error: error.message };
+
+  // Notify the shopkeeper they're verified.
+  try {
+    if (shop?.profile_id) {
+      await admin.from("notifications").insert({
+        recipient_profile_id: shop.profile_id as string,
+        category: "system",
+        title: "✅ Your shop is verified",
+        body: "You can now place orders and use the POS. Welcome to Himova!",
+        link: "/shop",
+      });
+    }
+  } catch {
+    /* ignore */
+  }
+
+  revalidatePath("/admin/shopkeepers");
+  revalidatePath(`/admin/shopkeepers/${parsed.data.shopkeeperId}`);
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Delete a shopkeeper entirely (reject registration or remove an account).
+// Cleans up: document, shopkeeper row (cascades pricing/cart/etc), profile,
+// and the auth user.
+// ---------------------------------------------------------------------------
+const deleteSchema = z.object({ shopkeeperId: z.string().uuid() });
+
+export async function deleteShopkeeper(
+  _prev: ShopkeeperActionState | null,
+  formData: FormData
+): Promise<ShopkeeperActionState> {
+  await requireRole(["admin"]);
+  const parsed = deleteSchema.safeParse({ shopkeeperId: formData.get("shopkeeperId") });
+  if (!parsed.success) return { ok: false, error: "Invalid input." };
+
+  const admin = getSupabaseAdminClient();
+  const { data: shop } = await admin
+    .from("shopkeepers")
+    .select("profile_id, document_path")
+    .eq("id", parsed.data.shopkeeperId)
+    .maybeSingle();
+  if (!shop) return { ok: false, error: "Shopkeeper not found." };
+
+  // Remove the verification document if present.
+  if (shop.document_path) {
+    await admin.storage.from("shopkeeper-docs").remove([shop.document_path as string]);
+  }
+
+  // Deleting the auth user cascades to profiles (FK on delete cascade) and
+  // then to shopkeepers (FK on delete cascade), taking orders/cart/etc with it.
+  if (shop.profile_id) {
+    const { error } = await admin.auth.admin.deleteUser(shop.profile_id as string);
+    if (error) {
+      // Fall back to deleting the shopkeeper row directly.
+      await admin.from("shopkeepers").delete().eq("id", parsed.data.shopkeeperId);
+    }
+  } else {
+    await admin.from("shopkeepers").delete().eq("id", parsed.data.shopkeeperId);
+  }
+
+  revalidatePath("/admin/shopkeepers");
+  return { ok: true };
+}
+
+/**
+ * Generate a short-lived signed URL to view a shopkeeper's verification
+ * document. Admin only.
+ */
+export async function getDocumentUrl(shopkeeperId: string): Promise<string | null> {
+  await requireRole(["admin"]);
+  const admin = getSupabaseAdminClient();
+  const { data: shop } = await admin
+    .from("shopkeepers")
+    .select("document_path")
+    .eq("id", shopkeeperId)
+    .maybeSingle();
+  if (!shop?.document_path) return null;
+
+  const { data } = await admin.storage
+    .from("shopkeeper-docs")
+    .createSignedUrl(shop.document_path as string, 60 * 10);
+  return data?.signedUrl ?? null;
+}

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { requireRole } from "@/lib/auth/session";
 import { loadCart } from "@/lib/cart";
 import { getCurrentShopkeeperId } from "@/lib/catalog";
+import { isCurrentShopkeeperActive } from "@/lib/shopkeeper";
 import { applyDeliveryStockIn, applyShipmentStockOut } from "@/lib/stock";
 import { getSupabaseServerClient, getSupabaseAdminClient } from "@/lib/supabase/server";
 
@@ -57,6 +58,13 @@ export async function placeOrder(
 
   const shopkeeperId = await getCurrentShopkeeperId();
   if (!shopkeeperId) return { ok: false, error: "Shopkeeper account not found." };
+
+  if (!(await isCurrentShopkeeperActive())) {
+    return {
+      ok: false,
+      error: "Your account is awaiting verification. You can browse now and order once verified.",
+    };
+  }
 
   const cart = await loadCart();
   if (cart.lines.length === 0) {
