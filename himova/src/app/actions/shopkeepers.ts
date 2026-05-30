@@ -7,6 +7,7 @@ import { z } from "zod";
 import { normalisePhone, phoneToSyntheticEmail, toLocalDigits } from "@/lib/auth/phone";
 import { requireRole } from "@/lib/auth/session";
 import { getSupabaseAdminClient } from "@/lib/supabase/server";
+import { notifyProfiles } from "@/lib/messaging/notify";
 
 export type ShopkeeperActionState = {
   ok: boolean;
@@ -212,8 +213,8 @@ export async function verifyShopkeeper(
   // Notify the shopkeeper they're verified.
   try {
     if (shop?.profile_id) {
-      await admin.from("notifications").insert({
-        recipient_profile_id: shop.profile_id as string,
+      await notifyProfiles({
+        recipientProfileIds: [shop.profile_id as string],
         category: "system",
         title: "✅ Your shop is verified",
         body: "You can now place orders and use the POS. Welcome to Himova!",

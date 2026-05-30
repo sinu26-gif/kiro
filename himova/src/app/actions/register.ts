@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { normalisePhone, phoneToSyntheticEmail, toLocalDigits } from "@/lib/auth/phone";
 import { getSupabaseAdminClient } from "@/lib/supabase/server";
+import { notifyProfiles } from "@/lib/messaging/notify";
 
 export type RegisterState = {
   ok: boolean;
@@ -163,15 +164,13 @@ export async function registerShopkeeper(
   try {
     const { data: admins } = await admin.from("profiles").select("id").eq("role", "admin");
     if (admins && admins.length > 0) {
-      await admin.from("notifications").insert(
-        admins.map((a) => ({
-          recipient_profile_id: a.id as string,
-          category: "system" as const,
-          title: "New shopkeeper registration",
-          body: `${parsed.data.shopName} (${toLocalDigits(phone)}) is awaiting verification.`,
-          link: "/admin/shopkeepers?filter=pending",
-        }))
-      );
+      await notifyProfiles({
+        recipientProfileIds: admins.map((a) => a.id as string),
+        category: "system",
+        title: "New shopkeeper registration",
+        body: `${parsed.data.shopName} (${toLocalDigits(phone)}) is awaiting verification.`,
+        link: "/admin/shopkeepers?filter=pending",
+      });
     }
   } catch {
     /* notification failure must not block registration */

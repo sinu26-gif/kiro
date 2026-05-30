@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { requireRole } from "@/lib/auth/session";
 import { getSupabaseAdminClient } from "@/lib/supabase/server";
+import { notifyProfiles } from "@/lib/messaging/notify";
 
 export type RewardActionState = { ok: boolean; error?: string };
 
@@ -82,14 +83,16 @@ export async function createRewardCycle(
 
     const rows = (allShops ?? [])
       .filter((s) => s.profile_id)
-      .map((s) => ({
-        recipient_profile_id: s.profile_id as string,
-        category: "reward" as const,
+      .map((s) => s.profile_id as string);
+    if (rows.length > 0) {
+      await notifyProfiles({
+        recipientProfileIds: rows,
+        category: "reward",
         title: `🏆 ${cycleLabel} rewards announced`,
         body: `Congratulations to our winners! ${winnerLine}`,
         link: "/shop/leaderboard",
-      }));
-    if (rows.length > 0) await admin.from("notifications").insert(rows);
+      });
+    }
 
     await admin.from("app_events").insert({
       event_type: "reward_cycle_created",

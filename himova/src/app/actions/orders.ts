@@ -10,6 +10,7 @@ import { getCurrentShopkeeperId } from "@/lib/catalog";
 import { isCurrentShopkeeperActive } from "@/lib/shopkeeper";
 import { applyDeliveryStockIn, applyShipmentStockOut } from "@/lib/stock";
 import { getSupabaseServerClient, getSupabaseAdminClient } from "@/lib/supabase/server";
+import { notifyProfiles } from "@/lib/messaging/notify";
 
 type OrderStatusValue = "pending" | "packed" | "shipped" | "delivered" | "cancelled";
 
@@ -126,14 +127,13 @@ export async function placeOrder(
       .maybeSingle();
     const { data: admins } = await admin.from("profiles").select("id").eq("role", "admin");
     if (admins && admins.length > 0) {
-      const rows = admins.map((a) => ({
-        recipient_profile_id: a.id as string,
-        category: "order" as const,
+      await notifyProfiles({
+        recipientProfileIds: admins.map((a) => a.id as string),
+        category: "order",
         title: "New order placed",
         body: `${shop?.shop_name ?? "A shopkeeper"} placed an order for ${formatPaisa(cart.subtotalPaisa)}.`,
         link: `/admin/orders/${order.id}`,
-      }));
-      await admin.from("notifications").insert(rows);
+      });
     }
     await admin.from("app_events").insert({
       event_type: "order_placed",
@@ -220,8 +220,8 @@ export async function updateOrderStatus(
       .eq("id", order.shopkeeper_id)
       .maybeSingle();
     if (shop?.profile_id) {
-      await admin.from("notifications").insert({
-        recipient_profile_id: shop.profile_id,
+      await notifyProfiles({
+        recipientProfileIds: [shop.profile_id as string],
         category: "order",
         title: `Order ${nextStatus}`,
         body: `Your order is now ${nextStatus}.`,
